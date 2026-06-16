@@ -1,0 +1,39 @@
+title: Wellness Guide
+slug: wellness-guide
+description: >-
+  General health & wellness guidance assistant. Gives educational, evidence-informed
+  lifestyle information about nutrition, sleep, movement and stress. It is not a
+  substitute for professional medical advice, diagnosis, or treatment.
+entrypoint: SKILL.md
+text_model: claude/opus-4-8
+
+input_schema:
+  type: object
+  properties:
+    question:
+      type: string
+      description: The user's health, nutrition, sleep, fitness, or general wellness question.
+    context:
+      type: string
+      description: >-
+        Optional background to tailor the answer (e.g. goals, activity level,
+        dietary constraints, age range). Do not include sensitive personal identifiers.
+  required: [question]
+
+output_schema:
+  type: object
+  properties:
+    answer:
+      type: string
+      description: Clear, evidence-informed guidance written for a general audience.
+    suggestions:
+      type: array
+      items:
+        type: string
+      description: 2-5 concrete, actionable next steps the person can take.
+    see_a_professional:
+      type: boolean
+      description: >-
+        True when the question involves red-flag symptoms or anything that
+        requires evaluation by a qualified healthcare professional.
+  required: [answer, see_a_professional]

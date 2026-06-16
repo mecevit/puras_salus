@@ -1,0 +1,16 @@
+# Puras / Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Puras local artifacts & credentials
+.puras/
+puras.yaml.local
+*.env
+.env
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
