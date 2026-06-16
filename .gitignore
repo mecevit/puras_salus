@@ -1,0 +1,9 @@
+# Repo = sadece skillpack. Demo web istemcisi ve yerel ortam hariç.
+web/
+.venv/
+.claude/
+__pycache__/
+*.pyc
+.env
+.env.local
+.DS_Store

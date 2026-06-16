@@ -1,0 +1,159 @@
+title: Health Tips
+description: >
+  Sağlık app'i için 2 günde bir sunulacak kişisel öneriler üretir. Sadece bir
+  user_id alır; kullanıcının profilini ve diyet kısıtlarını DB'den tipli
+  tool'larla (yalnızca gereken alanlar) çeker, geçmiş önerileri workspace
+  memory'den hatırlar ve TEKRARLAMADAN yeni ipuçları döner.
+
+entrypoint: SKILL.md
+text_model: claude/sonnet-4-6
+
+# Sayısal hesap deterministik tool'da; modelin shell'e ihtiyacı yok.
+disable_bash: true
+
+# Ucuz/yetkin Sonnet ile çalış; iki denemede şema-geçerli set_output
+# üretemezse kalan run için Opus'a yüksel.
+routing:
+  escalate_to: claude/opus-4-8
+  on: [schema_fail]
+  after: 2
+
+input_schema:
+  type: object
+  required: [user_id]
+  properties:
+    user_id:
+      type: string
+      description: Kullanıcının DB'deki id'si (örn. u_1001).
+
+output_schema:
+  type: object
+  required: [user_id, headline, tips, disclaimer]
+  properties:
+    user_id:
+      type: string
+      description: Önerilerin ait olduğu kullanıcı (app'in eşleştirmesi için).
+    headline:
+      type: text
+      description: Bu 2 günlük döngü için kısa, kişisel ve motive edici giriş (1–2 cümle).
+    tips:
+      type: array
+      minItems: 3
+      maxItems: 5
+      description: Kullanıcıya gösterilecek, bu döngüye özel öneriler (geçmişi tekrar etmez).
+      items:
+        type: object
+        properties:
+          category:
+            type: string
+            enum: [nutrition, hydration, activity, supplement, habit, sleep]
+          title:
+            type: string
+            description: Kısa, eyleme dönük başlık.
+          detail:
+            type: string
+            description: 1–2 cümle; ne yapılacağı ve neden.
+    disclaimer:
+      type: string
+      description: Tıbbi sorumluluk reddi.
+
+tools:
+  - name: get_user_profile
+    description: >
+      Verilen user_id için kullanıcının profilini DB'den çeker: yaş, cinsiyet,
+      boy, kilo, hedef, aktivite seviyesi, hedef kilo, dil (locale) ve ilerleme
+      (kilo zaman serisi). Diyet/sağlık bilgisi DAHİL DEĞİL — onu
+      get_dietary_restrictions verir.
+    entrypoint: tools/get_user_profile.py:run
+    input_schema:
+      type: object
+      required: [user_id]
+      properties:
+        user_id: { type: string }
+    output_schema:
+      type: object
+      properties:
+        name: { type: string }
+        age: { type: integer }
+        sex: { type: string }
+        height_cm: { type: number }
+        weight_kg: { type: number }
+        goal: { type: string }
+        activity_level: { type: string }
+        target_weight_kg: { type: number }
+        locale: { type: string }
+        progress:
+          type: array
+          items:
+            type: object
+            properties:
+              date: { type: string }
+              weight_kg: { type: number }
+
+  - name: get_dietary_restrictions
+    description: >
+      Verilen user_id için kullanıcının diyet kısıtlarını (örn. lactose_free,
+      vegan) ve sağlık durumları/alerjilerini (örn. hypertension) DB'den çeker.
+      Öneriler bu kısıtları KESİNLİKLE ihlal etmemeli.
+    entrypoint: tools/get_dietary_restrictions.py:run
+    input_schema:
+      type: object
+      required: [user_id]
+      properties:
+        user_id: { type: string }
+    output_schema:
+      type: object
+      properties:
+        dietary_restrictions: { type: array, items: { type: string } }
+        health_conditions: { type: array, items: { type: string } }
+
+  - name: compute_metrics
+    description: >
+      Deterministik sağlık metriklerini hesaplar: BMI ve kategori, Mifflin-St
+      Jeor BMR, aktivite çarpanıyla TDEE, hedefe göre güvenli günlük kalori
+      hedefi, günlük su (ml), günlük protein (g). Sayısal değerleri ASLA kendin
+      tahmin etme — profil alındıktan sonra bu tool'u bir kez çağır.
+    entrypoint: tools/metrics.py:run
+    input_schema:
+      type: object
+      required: [sex, age, height_cm, weight_kg, activity_level, goal]
+      properties:
+        sex: { type: string, enum: [male, female] }
+        age: { type: integer }
+        height_cm: { type: number }
+        weight_kg: { type: number }
+        activity_level:
+          type: string
+          enum: [sedentary, light, moderate, active, very_active]
+        goal:
+          type: string
+          enum: [lose_weight, gain_muscle, maintain, improve_energy, general_health]
+    output_schema:
+      type: object
+      properties:
+        bmi: { type: number }
+        bmi_category: { type: string }
+        bmr_kcal: { type: integer }
+        tdee_kcal: { type: integer }
+        target_calories_kcal: { type: integer }
+        water_ml: { type: integer }
+        protein_target_g: { type: integer }
+
+evals:
+  dataset: evals/cases.jsonl
+  graders:
+    - name: well_formed
+      kind: schema
+      weight: 1
+    - name: usable_tips
+      kind: check
+      entrypoint: evals/limits.py:grade
+      weight: 2
+
+examples:
+  - title: Elif — kilo verme (u_1001)
+    inputs: { user_id: u_1001 }
+  - title: Mert — kas kazanma (u_1002)
+    inputs: { user_id: u_1002 }
+  - title: Aylin — vegan, hipertansiyon (u_1003)
+    inputs: { user_id: u_1003 }

@@ -1,0 +1,9 @@
+skillpack_id: 23dc5b29-5693-45ab-a16b-9dcf565f0059
+slug: salus
+
+title: Salus
+description: >
+  Kişiselleştirilmiş sağlık & beslenme öneri motoru. Kullanıcının hedef, ölçüm
+  ve ilerleme verilerinden günlük su, vitamin/takviye, yenecek/yenmeyecek
+  yiyecekler ve içecek önerileri üretir. Sayısal hesaplar (BMI, BMR/TDEE,
+  kalori, protein) deterministik; öneriler Claude ile kişiselleştirilir.

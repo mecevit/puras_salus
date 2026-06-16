@@ -1,0 +1,6 @@
+# Eval dataset for `recommend` — one JSON case per line (blank lines and `#`
+# comments ignored). API now takes only a user_id; the skill fetches everything
+# else from the DB and from workspace memory.
+{"id": "elif", "inputs": {"user_id": "u_1001"}, "tags": ["smoke"]}
+{"id": "mert", "inputs": {"user_id": "u_1002"}}
+{"id": "aylin", "inputs": {"user_id": "u_1003"}}
