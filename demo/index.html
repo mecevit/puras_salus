@@ -23,6 +23,10 @@
   .grid{position:absolute;inset:-2px;opacity:.05;
     background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
     background-size:64px 64px}
+  /* camera world: everything cinematic lives here; #stage gradient stays put (free parallax) */
+  #world{position:absolute;inset:0;width:1920px;height:1080px;transform-origin:0 0;will-change:transform}
+  #vignette{position:absolute;inset:0;z-index:35;pointer-events:none;
+    background:radial-gradient(125% 125% at 50% 47%, transparent 52%, rgba(0,0,0,.5) 100%)}
   .scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
 
   /* ===== intro shapes ===== */
@@ -105,14 +109,14 @@
   /* logo wordmark */
   #brand{position:absolute;top:56px;left:64px;display:flex;align-items:center;gap:14px;opacity:0;z-index:30}
   #brand .lg{width:40px;height:40px;border-radius:12px;background:conic-gradient(from 200deg,var(--brand),var(--brand2),var(--accent),var(--brand))}
+  #brand{z-index:36}
   #brand .wm{font-size:26px;font-weight:800;letter-spacing:.5px}
 </style>
 </head>
 <body>
 <div id="stage">
+  <div id="world">
   <div class="grid"></div>
-
-  <div id="brand"><div class="lg"></div><div class="wm">puras</div></div>
 
   <!-- intro shapes -->
   <div class="shape sq" id="sh1"></div>
@@ -177,6 +181,10 @@
     <div class="donechip" id="donechip">✓ Pipeline complete — 5/5 nodes</div>
   </div>
 
+  </div><!-- /#world -->
+
+  <div id="vignette"></div>
+  <div id="brand"><div class="lg"></div><div class="wm">puras</div></div>
   <div id="caption"><span class="ct" id="captiontext"></span></div>
 </div>
 
@@ -305,6 +313,44 @@ const finish = actStart + 5*stepDur + 0.1;
 tl.to("#donechip",{opacity:1, y:0, duration:.6, ease:"back.out(1.7)"}, finish);
 tl.to("#pipe",{scale:1.02, duration:1.6, ease:"power1.inOut"}, finish+0.2);
 caption(tl,"From one file to a live multi-node skill", finish+0.1, 2.2);
+
+/* ================= CAMERA =================
+   Cinematic camera over #world. To center world-point (x,y) at the viewport
+   center (960,540) at scale s:  tx = 960 - s*x,  ty = 540 - s*y  (origin 0 0). */
+const world = $("#world");
+const cam = {x:960, y:540, s:1.06};
+const setCam = ()=>{ const s=cam.s;
+  world.style.transform = `translate(${(960 - s*cam.x).toFixed(2)}px,${(540 - s*cam.y).toFixed(2)}px) scale(${s})`; };
+setCam();
+function camTo(at, dur, x, y, s, ease="power2.inOut"){
+  tl.to(cam, {x, y, s, duration:dur, ease, onUpdate:setCam}, at);
+}
+
+// intro — gentle Ken Burns drift (no dead frames)
+camTo(0.0, 2.6, 1015, 512, 1.05, "sine.inOut");
+// settle to frame the file as the shapes collapse into it
+camTo(2.7, 0.6, 960, 540, 1.0, "power2.out");
+// push-in close-up on the SKILL.md body as typing begins
+camTo(3.4, 0.7, 950, 548, 1.42, "power2.inOut");
+// FOLLOW THE TYPING CARET down the lines (the requested move)
+camTo(4.1, 1.3, 985, 612, 1.46, "sine.inOut");
+// pull back out before the file blurs/slides away
+camTo(6.15, 0.5, 960, 540, 1.0, "power2.inOut");
+// terminal — push-in to the command line
+camTo(7.4, 0.7, 800, 505, 1.3, "power2.inOut");
+// follow the command as it types to the right
+camTo(8.1, 1.2, 905, 510, 1.32, "sine.inOut");
+// pull back to reveal the install output + success
+camTo(9.5, 0.7, 960, 545, 1.06, "power2.inOut");
+// frame the whole pipeline as it materializes
+camTo(pipeStart, 0.9, 960, 555, 1.0, "power2.inOut");
+// PAN ACROSS NODES as they light up, following the action left→right
+const nodeCx=[360,660,960,1260,1560];
+camTo(actStart-0.45, 0.5, nodeCx[0], 560, 1.13, "power2.out");
+for(let i=0;i<5;i++){ camTo(actStart + i*stepDur, stepDur*0.9, nodeCx[i], 560, 1.13, "sine.inOut"); }
+// pull back wide to reveal the full pipeline + done chip, then a slow push
+camTo(finish, 0.9, 960, 568, 0.99, "power2.out");
+camTo(finish+1.0, 1.8, 960, 560, 1.04, "sine.inOut");
 
 window.__DURATION__ = tl.duration() + 0.4;
 window.__seek = (t)=>{ tl.time(Math.min(t, tl.duration()), false); };
