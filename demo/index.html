@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Puras — Skill → Pipeline</title>
+<style>
+  :root{
+    --bg0:#070b16; --bg1:#0b1224;
+    --ink:#eaf0ff; --muted:#8da2c6;
+    --brand:#3ddc97; --brand2:#39c0ed; --accent:#7c5cff; --amber:#ffd166;
+    --card:#121a30; --card2:#0f1730; --line:rgba(255,255,255,.09);
+    --mono:'SFMono-Regular',ui-monospace,'JetBrains Mono','Menlo',Consolas,monospace;
+    --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg0);font-family:var(--font);color:var(--ink)}
+  #stage{position:relative;width:1920px;height:1080px;
+    background:
+      radial-gradient(1300px 760px at 22% 16%, rgba(61,220,151,.10), transparent 60%),
+      radial-gradient(1200px 820px at 84% 88%, rgba(124,92,255,.13), transparent 60%),
+      linear-gradient(160deg,var(--bg0),var(--bg1));
+    overflow:hidden}
+  .grid{position:absolute;inset:-2px;opacity:.05;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:64px 64px}
+  .scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+
+  /* ===== intro shapes ===== */
+  .shape{position:absolute;opacity:0;will-change:transform,opacity}
+  .sq{width:120px;height:120px;border-radius:24px;border:3px solid var(--brand2)}
+  .ci{width:130px;height:130px;border-radius:50%;border:3px solid var(--brand)}
+  .ri{width:150px;height:150px;border-radius:50%;border:18px solid rgba(124,92,255,.6)}
+  .tr{width:0;height:0;border-left:70px solid transparent;border-right:70px solid transparent;border-bottom:120px solid var(--amber);opacity:.0}
+  .pl{width:120px;height:120px;border-radius:24px;background:linear-gradient(135deg,var(--accent),var(--brand2));}
+
+  /* ===== file card ===== */
+  #file{position:relative;width:760px;opacity:0;will-change:transform,opacity,filter}
+  .filewin{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);
+    border-radius:22px;overflow:hidden;box-shadow:0 50px 130px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05)}
+  .filebar{display:flex;align-items:center;gap:14px;padding:20px 26px;border-bottom:1px solid var(--line);
+    background:rgba(255,255,255,.02)}
+  .filebar .ic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    background:rgba(57,192,237,.15);border:1px solid rgba(57,192,237,.35);font-size:18px}
+  .filebar .nm{font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:.5px}
+  .filebar .badge{margin-left:auto;font-size:15px;font-weight:700;color:var(--brand);
+    background:rgba(61,220,151,.13);border:1px solid rgba(61,220,151,.35);padding:6px 14px;border-radius:99px}
+  .filebody{padding:36px 40px;font-family:var(--mono);font-size:25px;line-height:1.7}
+  .filebody .h{color:var(--accent)}
+  .filebody .k{color:var(--brand2)}
+  .filebody .s{color:var(--muted)}
+  .filebody .t{color:var(--ink)}
+  .filecaret{display:inline-block;width:12px;height:26px;background:var(--brand);vertical-align:-3px;margin-left:2px;opacity:0}
+
+  /* ===== terminal ===== */
+  #term{position:relative;width:920px;opacity:0;transform:translateX(60px);will-change:transform,opacity,filter}
+  .termwin{background:#05080f;border:1px solid var(--line);border-radius:18px;overflow:hidden;
+    box-shadow:0 50px 130px rgba(0,0,0,.65)}
+  .termbar{display:flex;align-items:center;gap:10px;padding:18px 22px;background:#0a0f1c;border-bottom:1px solid var(--line)}
+  .dot{width:15px;height:15px;border-radius:50%}
+  .dr{background:#ff5f57}.dy{background:#febc2e}.dg{background:#28c840}
+  .termtitle{margin-left:14px;font-family:var(--mono);font-size:16px;color:var(--muted)}
+  .termbody{padding:32px 34px;font-family:var(--mono);font-size:24px;line-height:1.65;min-height:300px}
+  .termbody .pr{color:var(--brand)}
+  .termbody .cmd{color:var(--ink)}
+  .termbody .out{color:var(--muted)}
+  .termbody .ok{color:var(--brand)}
+  .termcaret{display:inline-block;width:12px;height:25px;background:#fff;vertical-align:-3px;opacity:0}
+  .tline{opacity:0}
+
+  /* ===== pipeline ===== */
+  #pipe{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;will-change:opacity,transform}
+  .pipetitle{font-size:30px;font-weight:700;margin-bottom:8px;opacity:.0}
+  .pipesub{font-size:19px;color:var(--muted);margin-bottom:60px;opacity:0}
+  .row{display:flex;align-items:center;justify-content:center}
+  .node{position:relative;width:212px;height:160px;border-radius:22px;
+    background:linear-gradient(180deg,var(--card),var(--card2));border:1.5px solid var(--line);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+    opacity:0;transform:scale(.8);will-change:transform,opacity;
+    box-shadow:0 24px 60px rgba(0,0,0,.4)}
+  .node .nic{font-size:40px;line-height:1}
+  .node .nlb{font-size:19px;font-weight:600}
+  .node .nsub{font-size:14px;color:var(--muted)}
+  .node .ring{position:absolute;top:-10px;right:-10px;width:40px;height:40px;opacity:0}
+  .node .chk{position:absolute;top:-10px;right:-10px;width:40px;height:40px;border-radius:50%;
+    background:var(--brand);color:#04241a;display:flex;align-items:center;justify-content:center;
+    font-size:24px;font-weight:800;opacity:0;transform:scale(.4)}
+  .node.active{border-color:var(--brand2);box-shadow:0 0 0 5px rgba(57,192,237,.14),0 24px 70px rgba(57,192,237,.25)}
+  .node.done{border-color:rgba(61,220,151,.55)}
+
+  .conn{width:88px;height:4px;position:relative;background:rgba(255,255,255,.08);border-radius:99px;margin:0 -2px;opacity:0}
+  .conn .fill{position:absolute;left:0;top:0;height:100%;width:0%;border-radius:99px;
+    background:linear-gradient(90deg,var(--brand),var(--brand2))}
+  .conn .pkt{position:absolute;top:50%;left:0;width:14px;height:14px;border-radius:50%;margin:-7px 0 0 -7px;
+    background:var(--brand2);box-shadow:0 0 16px var(--brand2);opacity:0}
+
+  .donechip{margin-top:64px;font-size:22px;font-weight:700;color:var(--brand);
+    background:rgba(61,220,151,.12);border:1px solid rgba(61,220,151,.4);padding:14px 30px;border-radius:99px;
+    opacity:0;transform:translateY(20px)}
+
+  /* ===== caption ===== */
+  #caption{position:absolute;left:0;right:0;bottom:60px;text-align:center;z-index:40;opacity:0}
+  #caption .ct{display:inline-block;font-size:25px;font-weight:600;
+    background:rgba(7,11,22,.72);backdrop-filter:blur(8px);padding:15px 30px;border-radius:99px;border:1px solid var(--line)}
+
+  /* logo wordmark */
+  #brand{position:absolute;top:56px;left:64px;display:flex;align-items:center;gap:14px;opacity:0;z-index:30}
+  #brand .lg{width:40px;height:40px;border-radius:12px;background:conic-gradient(from 200deg,var(--brand),var(--brand2),var(--accent),var(--brand))}
+  #brand .wm{font-size:26px;font-weight:800;letter-spacing:.5px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="grid"></div>
+
+  <div id="brand"><div class="lg"></div><div class="wm">puras</div></div>
+
+  <!-- intro shapes -->
+  <div class="shape sq" id="sh1"></div>
+  <div class="shape ci" id="sh2"></div>
+  <div class="shape ri" id="sh3"></div>
+  <div class="shape tr" id="sh4"></div>
+  <div class="shape pl" id="sh5"></div>
+  <div class="shape sq" id="sh6" style="border-color:var(--accent)"></div>
+
+  <!-- file -->
+  <div class="scene"><div id="file">
+    <div class="filewin">
+      <div class="filebar">
+        <div class="ic">📄</div>
+        <div class="nm">SKILL.md</div>
+        <div class="badge">NEW FILE</div>
+      </div>
+      <div class="filebody"><span id="ftext"></span><span class="filecaret" id="fcaret"></span></div>
+    </div>
+  </div></div>
+
+  <!-- terminal -->
+  <div class="scene"><div id="term">
+    <div class="termwin">
+      <div class="termbar"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
+        <span class="termtitle">bash — puras</span></div>
+      <div class="termbody">
+        <div class="tline" id="tl0" style="opacity:1"><span class="pr">$</span> <span class="cmd" id="tcmd"></span><span class="termcaret" id="tcaret"></span></div>
+        <div class="tline" id="tl1"><span class="out">Collecting puras</span></div>
+        <div class="tline" id="tl2"><span class="out">  Downloading puras-1.0.0-py3-none-any.whl (48 kB)</span></div>
+        <div class="tline" id="tl3"><span class="out">Installing collected packages: puras</span></div>
+        <div class="tline" id="tl4"><span class="ok">Successfully installed puras-1.0.0</span></div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- pipeline -->
+  <div id="pipe">
+    <div class="pipetitle" id="ptitle">SKILL.md → live pipeline</div>
+    <div class="pipesub" id="psub">read the documents · split into categories</div>
+    <div class="row" id="prow">
+      <div class="node" id="n1"><div class="nic">📥</div><div class="nlb">Ingest</div><div class="nsub">load documents</div>
+        <svg class="ring" id="r1" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="17" fill="none" stroke="#39c0ed" stroke-width="4" stroke-linecap="round" stroke-dasharray="34 80"/></svg>
+        <div class="chk" id="k1">✓</div></div>
+      <div class="conn" id="c1"><div class="fill" id="cf1"></div><div class="pkt" id="pk1"></div></div>
+      <div class="node" id="n2"><div class="nic">✂️</div><div class="nlb">Parse</div><div class="nsub">extract text</div>
+        <svg class="ring" id="r2" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="17" fill="none" stroke="#39c0ed" stroke-width="4" stroke-linecap="round" stroke-dasharray="34 80"/></svg>
+        <div class="chk" id="k2">✓</div></div>
+      <div class="conn" id="c2"><div class="fill" id="cf2"></div><div class="pkt" id="pk2"></div></div>
+      <div class="node" id="n3"><div class="nic">🧠</div><div class="nlb">Read</div><div class="nsub">understand · Claude</div>
+        <svg class="ring" id="r3" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="17" fill="none" stroke="#39c0ed" stroke-width="4" stroke-linecap="round" stroke-dasharray="34 80"/></svg>
+        <div class="chk" id="k3">✓</div></div>
+      <div class="conn" id="c3"><div class="fill" id="cf3"></div><div class="pkt" id="pk3"></div></div>
+      <div class="node" id="n4"><div class="nic">🏷️</div><div class="nlb">Classify</div><div class="nsub">assign category</div>
+        <svg class="ring" id="r4" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="17" fill="none" stroke="#39c0ed" stroke-width="4" stroke-linecap="round" stroke-dasharray="34 80"/></svg>
+        <div class="chk" id="k4">✓</div></div>
+      <div class="conn" id="c4"><div class="fill" id="cf4"></div><div class="pkt" id="pk4"></div></div>
+      <div class="node" id="n5"><div class="nic">📦</div><div class="nlb">Output</div><div class="nsub">grouped results</div>
+        <svg class="ring" id="r5" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="17" fill="none" stroke="#39c0ed" stroke-width="4" stroke-linecap="round" stroke-dasharray="34 80"/></svg>
+        <div class="chk" id="k5">✓</div></div>
+    </div>
+    <div class="donechip" id="donechip">✓ Pipeline complete — 5/5 nodes</div>
+  </div>
+
+  <div id="caption"><span class="ct" id="captiontext"></span></div>
+</div>
+
+<script src="vendor/gsap.min.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+function caption(tl, text, at, dur){
+  tl.call(()=>{ $("#captiontext").textContent=text; }, null, at);
+  tl.to("#caption",{opacity:1,duration:.3}, at);
+  tl.to("#caption",{opacity:0,duration:.3}, at+dur-0.3);
+}
+function typeInto(tl, el, str, start, cps){
+  const step = 1/cps;
+  for(let i=0;i<str.length;i++){
+    tl.call(()=>{ $(el).textContent = str.slice(0,i+1); }, null, start + i*step);
+  }
+  return start + str.length*step;
+}
+
+const tl = gsap.timeline({paused:true, defaults:{ease:"power3.inOut"}});
+
+/* ================= SCENE 0 : empty screen, shapes appear & leave ================= */
+tl.to("#brand",{opacity:1,duration:.6}, 0.3);
+const shapes=[
+  ["#sh1",{x:560,y:300}],["#sh2",{x:1300,y:340}],["#sh3",{x:1380,y:760}],
+  ["#sh4",{x:520,y:720}],["#sh5",{x:960,y:300}],["#sh6",{x:980,y:780}],
+];
+shapes.forEach((s,i)=>{
+  const sel=s[0], p=s[1];
+  gsap.set(sel,{left:p.x-75, top:p.y-75, rotation:gsap.utils.random(-40,40), scale:.4});
+  tl.to(sel,{opacity: sel==="#sh4"?1:1, scale:1, rotation:0, duration:.7, ease:"back.out(1.6)"}, 0.3 + i*0.12);
+  // float
+  tl.to(sel,{y:"+=18", duration:1.0, ease:"sine.inOut"}, 1.1+i*0.05);
+});
+// shapes converge to center & vanish (collapsing into the file)
+shapes.forEach((s,i)=>{
+  tl.to(s[0],{left:910, top:480, scale:.15, opacity:0, rotation:120, duration:.8, ease:"power3.in"}, 2.3+i*0.04);
+});
+
+/* ================= SCENE 1 : SKILL.md file appears ================= */
+gsap.set("#file",{scale:.6, y:30});
+tl.to("#file",{opacity:1, scale:1, y:0, duration:.8, ease:"back.out(1.5)"}, 2.9);
+caption(tl,"A new skill — written in plain language", 3.2, 2.4);
+// blink caret then type the markdown content (HTML so we keep coloring)
+const md =
+`<span class="h"># SKILL.md</span><br><br>`+
+`<span class="k">## Task</span><br>`+
+`<span class="t">Read the documents and</span><br>`+
+`<span class="t">split them into categories.</span><br><br>`+
+`<span class="k">## Output</span><br>`+
+`<span class="s">- category</span><br>`+
+`<span class="s">- confidence</span>`;
+// reveal line by line (clip via progressive innerHTML chunks)
+const chunks = md.split("<br>");
+let acc="";
+const fStart=3.7;
+chunks.forEach((c,i)=>{
+  acc += c + (i<chunks.length-1?"<br>":"");
+  const cur=acc;
+  tl.call(()=>{ $("#ftext").innerHTML=cur; }, null, fStart + i*0.18);
+});
+tl.fromTo("#fcaret",{opacity:1},{opacity:0,duration:.001,repeat:5,yoyo:true,repeatDelay:.18}, 3.7);
+
+/* ================= transition : file blurs + slides left, terminal in ================= */
+tl.to("#file",{x:-1400, filter:"blur(20px)", opacity:0, scale:.9, duration:.9, ease:"power3.in"}, 6.6);
+
+/* ================= SCENE 2 : terminal + pip install ================= */
+tl.to("#term",{opacity:1, x:0, duration:.8, ease:"power3.out"}, 6.9);
+caption(tl,"Install once", 7.2, 2.0);
+// caret blink before typing
+tl.fromTo("#tcaret",{opacity:1},{opacity:0,duration:.001,repeat:3,yoyo:true,repeatDelay:.2}, 7.4);
+const cmdEnd = typeInto(tl,"#tcmd","pip install puras", 8.0, 13);
+// "enter": hide caret, reveal output lines
+tl.to("#tcaret",{opacity:0,duration:.1}, cmdEnd+0.15);
+["#tl1","#tl2","#tl3"].forEach((l,i)=>{
+  tl.fromTo(l,{opacity:0,y:6},{opacity:1,y:0,duration:.25}, cmdEnd+0.35 + i*0.35);
+});
+tl.fromTo("#tl4",{opacity:0,y:6},{opacity:1,y:0,duration:.35,ease:"back.out(1.6)"}, cmdEnd+1.6);
+
+/* ================= transition : terminal → pipeline ================= */
+const pipeStart = cmdEnd + 2.4;
+tl.to("#term",{opacity:0, scale:.9, filter:"blur(14px)", duration:.7, ease:"power3.in"}, pipeStart);
+tl.to("#pipe",{opacity:1, duration:.5}, pipeStart+0.3);
+caption(tl,"…compiles into a running pipeline", pipeStart+0.4, 2.6);
+tl.fromTo("#ptitle",{opacity:0,y:18},{opacity:1,y:0,duration:.5}, pipeStart+0.5);
+tl.fromTo("#psub",{opacity:0,y:14},{opacity:1,y:0,duration:.5}, pipeStart+0.7);
+
+/* draw nodes + connectors appearing */
+const nodes=["#n1","#n2","#n3","#n4","#n5"];
+const conns=["#c1","#c2","#c3","#c4"];
+const drawStart=pipeStart+1.0;
+nodes.forEach((n,i)=>{
+  tl.to(n,{opacity:1, scale:1, duration:.5, ease:"back.out(1.5)"}, drawStart + i*0.18);
+  if(i<4) tl.to(conns[i],{opacity:1,duration:.3}, drawStart + i*0.18 + 0.2);
+});
+
+/* ================= node activation, one by one ================= */
+const actStart = drawStart + 1.4;
+const stepDur = 0.95;
+for(let i=0;i<5;i++){
+  const t0 = actStart + i*stepDur;
+  const ni="#n"+(i+1), ri="#r"+(i+1), ki="#k"+(i+1);
+  // activate
+  tl.call(()=>{ $(ni).classList.add("active"); }, null, t0);
+  tl.to(ri,{opacity:1,duration:.2}, t0);
+  // deterministic spinner: rotate ring during active window
+  tl.to(ri,{rotation:360*1.5, transformOrigin:"50% 50%", duration:stepDur*0.72, ease:"none"}, t0);
+  tl.to(ni,{y:-6, duration:.25, ease:"power2.out"}, t0);
+  tl.to(ni,{y:0, duration:.3, ease:"power2.in"}, t0+stepDur*0.7);
+  // complete → check + green
+  const tDone=t0+stepDur*0.72;
+  tl.to(ri,{opacity:0,duration:.15}, tDone);
+  tl.call(()=>{ $(ni).classList.remove("active"); $(ni).classList.add("done"); }, null, tDone);
+  tl.to(ki,{opacity:1,scale:1,duration:.35,ease:"back.out(2.2)"}, tDone);
+  // packet travels to next node along connector
+  if(i<4){
+    const cf="#cf"+(i+1), pk="#pk"+(i+1);
+    tl.fromTo(pk,{opacity:1,left:"0%"},{left:"100%",duration:.4,ease:"power1.inOut"}, tDone+0.05);
+    tl.to(cf,{width:"100%",duration:.4,ease:"power1.inOut"}, tDone+0.05);
+    tl.to(pk,{opacity:0,duration:.1}, tDone+0.45);
+  }
+}
+
+/* ================= finish ================= */
+const finish = actStart + 5*stepDur + 0.1;
+tl.to("#donechip",{opacity:1, y:0, duration:.6, ease:"back.out(1.7)"}, finish);
+tl.to("#pipe",{scale:1.02, duration:1.6, ease:"power1.inOut"}, finish+0.2);
+caption(tl,"From one file to a live multi-node skill", finish+0.1, 2.2);
+
+window.__DURATION__ = tl.duration() + 0.4;
+window.__seek = (t)=>{ tl.time(Math.min(t, tl.duration()), false); };
+if(!location.search.includes("render")){ tl.play(0); }
+</script>
+</body>
+</html>
