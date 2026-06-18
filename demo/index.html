@@ -2,189 +2,172 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Puras — Skill → Pipeline</title>
+<title>Puras — Skillpack</title>
 <style>
   :root{
-    --bg0:#070b16; --bg1:#0b1224;
-    --ink:#eaf0ff; --muted:#8da2c6;
-    --brand:#3ddc97; --brand2:#39c0ed; --accent:#7c5cff; --amber:#ffd166;
-    --card:#121a30; --card2:#0f1730; --line:rgba(255,255,255,.09);
+    --bg:#080810; --bg2:#0b0b16;
+    --ink:#e9edf7; --muted:#6b7390;
+    --prompt:#8b6dff; --tool:#f0a93c; --eval:#3ddc97; --io:#46b6e8;
     --mono:'SFMono-Regular',ui-monospace,'JetBrains Mono','Menlo',Consolas,monospace;
     --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg0);font-family:var(--font);color:var(--ink)}
-  #stage{position:relative;width:1920px;height:1080px;
+  html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg);font-family:var(--font);color:var(--ink)}
+  #stage{position:relative;width:1920px;height:1080px;overflow:hidden;
     background:
-      radial-gradient(1300px 760px at 22% 16%, rgba(61,220,151,.10), transparent 60%),
-      radial-gradient(1200px 820px at 84% 88%, rgba(124,92,255,.13), transparent 60%),
-      linear-gradient(160deg,var(--bg0),var(--bg1));
-    overflow:hidden}
-  .grid{position:absolute;inset:-2px;opacity:.05;
-    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
-    background-size:64px 64px}
-  /* camera world: everything cinematic lives here; #stage gradient stays put (free parallax) */
+      radial-gradient(1200px 800px at 50% 22%, rgba(139,109,255,.10), transparent 60%),
+      radial-gradient(1000px 900px at 82% 92%, rgba(70,182,232,.08), transparent 60%),
+      linear-gradient(160deg,var(--bg),var(--bg2))}
   #world{position:absolute;inset:0;width:1920px;height:1080px;transform-origin:0 0;will-change:transform}
   #vignette{position:absolute;inset:0;z-index:35;pointer-events:none;
-    background:radial-gradient(125% 125% at 50% 47%, transparent 52%, rgba(0,0,0,.5) 100%)}
+    background:radial-gradient(125% 125% at 50% 47%, transparent 50%, rgba(0,0,0,.55) 100%)}
   .scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
 
-  /* ===== intro shapes ===== */
-  .shape{position:absolute;opacity:0;will-change:transform,opacity}
-  .sq{width:120px;height:120px;border-radius:24px;border:3px solid var(--brand2)}
-  .ci{width:130px;height:130px;border-radius:50%;border:3px solid var(--brand)}
-  .ri{width:150px;height:150px;border-radius:50%;border:18px solid rgba(124,92,255,.6)}
-  .tr{width:0;height:0;border-left:70px solid transparent;border-right:70px solid transparent;border-bottom:120px solid var(--amber);opacity:.0}
-  .pl{width:120px;height:120px;border-radius:24px;background:linear-gradient(135deg,var(--accent),var(--brand2));}
+  /* ===== EXTREME CLOSE-UP editor (full screen, huge type + block cursor) ===== */
+  .closeup{position:absolute;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(160deg,#06060d,#0a0a14);opacity:0;will-change:transform,opacity,filter}
+  .closeup .ed{font-family:var(--mono);font-size:132px;line-height:1.34;font-weight:600;letter-spacing:1px;
+    white-space:pre;max-width:1640px}
+  #edText .h{color:#9a86ff}
+  #edText{color:#cfd6ea}
+  .bigcaret{display:inline-block;width:54px;height:118px;background:var(--prompt);vertical-align:-18px;
+    margin-left:8px;border-radius:4px;box-shadow:0 0 40px rgba(139,109,255,.6);opacity:0}
+  /* terminal close-up variant */
+  #termcu .ed{font-size:108px}
+  #termcu .pr{color:var(--eval);margin-right:24px}
+  #tcuText{color:#e9edf7}
+  #tcuCaret{background:var(--eval);box-shadow:0 0 40px rgba(61,220,151,.6);height:96px}
 
-  /* ===== file card ===== */
-  #file{position:relative;width:760px;opacity:0;will-change:transform,opacity,filter}
-  .filewin{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);
-    border-radius:22px;overflow:hidden;box-shadow:0 50px 130px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.05)}
-  .filebar{display:flex;align-items:center;gap:14px;padding:20px 26px;border-bottom:1px solid var(--line);
-    background:rgba(255,255,255,.02)}
-  .filebar .ic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
-    background:rgba(57,192,237,.15);border:1px solid rgba(57,192,237,.35);font-size:18px}
-  .filebar .nm{font-family:var(--mono);font-size:22px;font-weight:600;letter-spacing:.5px}
-  .filebar .badge{margin-left:auto;font-size:15px;font-weight:700;color:var(--brand);
-    background:rgba(61,220,151,.13);border:1px solid rgba(61,220,151,.35);padding:6px 14px;border-radius:99px}
-  .filebody{padding:36px 40px;font-family:var(--mono);font-size:25px;line-height:1.7}
-  .filebody .h{color:var(--accent)}
-  .filebody .k{color:var(--brand2)}
-  .filebody .s{color:var(--muted)}
-  .filebody .t{color:var(--ink)}
-  .filecaret{display:inline-block;width:12px;height:26px;background:var(--brand);vertical-align:-3px;margin-left:2px;opacity:0}
+  /* ===== SKILLPACK container + cards (matches reference) ===== */
+  #pack{width:1200px;opacity:0;will-change:transform,opacity,filter}
+  .container{position:relative;border:1.5px solid rgba(139,109,255,.45);border-radius:30px;
+    background:rgba(139,109,255,.025);padding:46px;
+    box-shadow:0 60px 160px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04)}
+  .container::after{content:"";position:absolute;left:50%;bottom:-46px;width:1.5px;height:46px;
+    background:linear-gradient(rgba(139,109,255,.45),transparent);transform:translateX(-50%)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:26px}
 
-  /* ===== terminal ===== */
-  #term{position:relative;width:920px;opacity:0;transform:translateX(60px);will-change:transform,opacity,filter}
-  .termwin{background:#05080f;border:1px solid var(--line);border-radius:18px;overflow:hidden;
+  .card{position:relative;border-radius:20px;padding:30px 32px;background:rgba(255,255,255,.012);
+    border:1.5px solid var(--bd);will-change:transform,opacity,filter}
+  .card .chead{display:flex;align-items:center;gap:16px}
+  .card .cic{width:38px;height:38px;color:var(--ac);flex:0 0 auto}
+  .card .cic svg{width:100%;height:100%}
+  .card .cname{font-family:var(--mono);font-size:30px;font-weight:600;letter-spacing:.4px}
+  .card .clbl{margin-left:auto;font-family:var(--mono);font-size:18px;font-weight:600;letter-spacing:2px;color:var(--ac)}
+  .card .cbody{margin-top:20px;font-family:var(--mono);font-size:25px;line-height:1.65;color:#5f6885}
+  .card.prompt{--ac:var(--prompt);--bd:rgba(139,109,255,.5)}
+  .card.tool{--ac:var(--tool);--bd:rgba(240,169,60,.45)}
+  .card.eval{--ac:var(--eval);--bd:rgba(61,220,151,.4)}
+  .card.io{--ac:var(--io);--bd:rgba(70,182,232,.4)}
+  .card.active{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac),0 0 46px -6px var(--ac);
+    background:color-mix(in srgb, var(--ac) 7%, transparent)}
+  .card.active .cbody{color:#aeb7d2}
+
+  /* run-phase status badge */
+  .badge{position:absolute;top:-14px;right:-14px;width:42px;height:42px;opacity:0}
+  .badge .ring{width:100%;height:100%}
+  .badge .ring circle:nth-child(2){stroke:var(--ac)}
+  .badge .chk{position:absolute;inset:0;border-radius:50%;background:var(--ac);color:#06121a;
+    display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;opacity:0;transform:scale(.4)}
+
+  /* ===== terminal result card ===== */
+  #termcard{width:980px;opacity:0;will-change:transform,opacity,filter}
+  .termwin{background:#05060d;border:1px solid rgba(255,255,255,.1);border-radius:18px;overflow:hidden;
     box-shadow:0 50px 130px rgba(0,0,0,.65)}
-  .termbar{display:flex;align-items:center;gap:10px;padding:18px 22px;background:#0a0f1c;border-bottom:1px solid var(--line)}
-  .dot{width:15px;height:15px;border-radius:50%}
-  .dr{background:#ff5f57}.dy{background:#febc2e}.dg{background:#28c840}
-  .termtitle{margin-left:14px;font-family:var(--mono);font-size:16px;color:var(--muted)}
-  .termbody{padding:32px 34px;font-family:var(--mono);font-size:24px;line-height:1.65;min-height:300px}
-  .termbody .pr{color:var(--brand)}
-  .termbody .cmd{color:var(--ink)}
-  .termbody .out{color:var(--muted)}
-  .termbody .ok{color:var(--brand)}
-  .termcaret{display:inline-block;width:12px;height:25px;background:#fff;vertical-align:-3px;opacity:0}
+  .termbar{display:flex;align-items:center;gap:11px;padding:18px 22px;background:#0a0b16;border-bottom:1px solid rgba(255,255,255,.08)}
+  .tdot{width:15px;height:15px;border-radius:50%}.dr{background:#ff5f57}.dy{background:#febc2e}.dg{background:#28c840}
+  .ttitle{margin-left:12px;font-family:var(--mono);font-size:16px;color:#6c7590}
+  .termbody{padding:30px 34px;font-family:var(--mono);font-size:24px;line-height:1.7}
+  .termbody .pr{color:var(--eval)} .termbody .cmd{color:#e9edf7}
+  .termbody .out{color:#6c7590} .termbody .ok{color:var(--eval)}
   .tline{opacity:0}
 
-  /* ===== pipeline ===== */
-  #pipe{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;will-change:opacity,transform}
-  .pipetitle{font-size:30px;font-weight:700;margin-bottom:8px;opacity:.0}
-  .pipesub{font-size:19px;color:var(--muted);margin-bottom:60px;opacity:0}
-  .row{display:flex;align-items:center;justify-content:center}
-  .node{position:relative;width:212px;height:160px;border-radius:22px;
-    background:linear-gradient(180deg,var(--card),var(--card2));border:1.5px solid var(--line);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
-    opacity:0;transform:scale(.8);will-change:transform,opacity;
-    box-shadow:0 24px 60px rgba(0,0,0,.4)}
-  .node .nic{font-size:40px;line-height:1}
-  .node .nlb{font-size:19px;font-weight:600}
-  .node .nsub{font-size:14px;color:var(--muted)}
-  .node .ring{position:absolute;top:-10px;right:-10px;width:40px;height:40px;opacity:0}
-  .node .chk{position:absolute;top:-10px;right:-10px;width:40px;height:40px;border-radius:50%;
-    background:var(--brand);color:#04241a;display:flex;align-items:center;justify-content:center;
-    font-size:24px;font-weight:800;opacity:0;transform:scale(.4)}
-  .node.active{border-color:var(--brand2);box-shadow:0 0 0 5px rgba(57,192,237,.14),0 24px 70px rgba(57,192,237,.25)}
-  .node.done{border-color:rgba(61,220,151,.55)}
-
-  .conn{width:88px;height:4px;position:relative;background:rgba(255,255,255,.08);border-radius:99px;margin:0 -2px;opacity:0}
-  .conn .fill{position:absolute;left:0;top:0;height:100%;width:0%;border-radius:99px;
-    background:linear-gradient(90deg,var(--brand),var(--brand2))}
-  .conn .pkt{position:absolute;top:50%;left:0;width:14px;height:14px;border-radius:50%;margin:-7px 0 0 -7px;
-    background:var(--brand2);box-shadow:0 0 16px var(--brand2);opacity:0}
-
-  .donechip{margin-top:64px;font-size:22px;font-weight:700;color:var(--brand);
-    background:rgba(61,220,151,.12);border:1px solid rgba(61,220,151,.4);padding:14px 30px;border-radius:99px;
-    opacity:0;transform:translateY(20px)}
-
-  /* ===== caption ===== */
-  #caption{position:absolute;left:0;right:0;bottom:60px;text-align:center;z-index:40;opacity:0}
-  #caption .ct{display:inline-block;font-size:25px;font-weight:600;
-    background:rgba(7,11,22,.72);backdrop-filter:blur(8px);padding:15px 30px;border-radius:99px;border:1px solid var(--line)}
-
-  /* logo wordmark */
-  #brand{position:absolute;top:56px;left:64px;display:flex;align-items:center;gap:14px;opacity:0;z-index:30}
-  #brand .lg{width:40px;height:40px;border-radius:12px;background:conic-gradient(from 200deg,var(--brand),var(--brand2),var(--accent),var(--brand))}
-  #brand{z-index:36}
-  #brand .wm{font-size:26px;font-weight:800;letter-spacing:.5px}
+  /* ===== overlays ===== */
+  #caption{position:absolute;left:0;right:0;bottom:62px;text-align:center;z-index:40;opacity:0}
+  #caption .ct{display:inline-block;font-size:26px;font-weight:600;
+    background:rgba(8,8,16,.72);backdrop-filter:blur(8px);padding:15px 32px;border-radius:99px;border:1px solid rgba(255,255,255,.1)}
+  #livechip{position:absolute;left:0;right:0;bottom:150px;text-align:center;z-index:38;opacity:0}
+  #livechip span{display:inline-block;font-size:24px;font-weight:700;color:var(--eval);
+    background:rgba(61,220,151,.12);border:1px solid rgba(61,220,151,.4);padding:14px 32px;border-radius:99px}
+  #brand{position:absolute;top:54px;left:62px;display:flex;align-items:center;gap:13px;opacity:0;z-index:36}
+  #brand .lg{width:38px;height:38px;border-radius:11px;background:conic-gradient(from 200deg,var(--prompt),var(--io),var(--eval),var(--prompt))}
+  #brand .wm{font-size:25px;font-weight:800;letter-spacing:.5px}
 </style>
 </head>
 <body>
 <div id="stage">
   <div id="world">
-  <div class="grid"></div>
 
-  <!-- intro shapes -->
-  <div class="shape sq" id="sh1"></div>
-  <div class="shape ci" id="sh2"></div>
-  <div class="shape ri" id="sh3"></div>
-  <div class="shape tr" id="sh4"></div>
-  <div class="shape pl" id="sh5"></div>
-  <div class="shape sq" id="sh6" style="border-color:var(--accent)"></div>
-
-  <!-- file -->
-  <div class="scene"><div id="file">
-    <div class="filewin">
-      <div class="filebar">
-        <div class="ic">📄</div>
-        <div class="nm">SKILL.md</div>
-        <div class="badge">NEW FILE</div>
+    <!-- skillpack -->
+    <div class="scene"><div id="pack">
+      <div class="container">
+        <div class="card prompt" id="cardPrompt">
+          <div class="chead">
+            <span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg></span>
+            <span class="cname">SKILL.md</span><span class="clbl">PROMPT</span>
+            <span class="badge" id="bP"><svg class="ring" viewBox="0 0 42 42"><circle cx="21" cy="21" r="18" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="21" cy="21" r="18" fill="none" stroke="var(--ac)" stroke-width="4" stroke-linecap="round" stroke-dasharray="36 90"/></svg><span class="chk">✓</span></span>
+          </div>
+          <div class="cbody" id="promptBody"></div>
+        </div>
+        <div class="grid2">
+          <div class="card tool" id="cardSearch">
+            <div class="chead">
+              <span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3.5 17.2a1.6 1.6 0 0 0 0 2.3l1 1a1.6 1.6 0 0 0 2.3 0l5.7-5.8a4 4 0 0 0 5.2-5.4l-2.6 2.6-2.1-2.1z"/></svg></span>
+              <span class="cname">search.py</span><span class="clbl">TOOL</span>
+              <span class="badge" id="bS"><svg class="ring" viewBox="0 0 42 42"><circle cx="21" cy="21" r="18" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="21" cy="21" r="18" fill="none" stroke="var(--ac)" stroke-width="4" stroke-linecap="round" stroke-dasharray="36 90"/></svg><span class="chk">✓</span></span>
+            </div>
+            <div class="cbody">def search(q)<br>→ results</div>
+          </div>
+          <div class="card tool" id="cardFetch">
+            <div class="chead">
+              <span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3.5 17.2a1.6 1.6 0 0 0 0 2.3l1 1a1.6 1.6 0 0 0 2.3 0l5.7-5.8a4 4 0 0 0 5.2-5.4l-2.6 2.6-2.1-2.1z"/></svg></span>
+              <span class="cname">fetch.py</span><span class="clbl">TOOL</span>
+              <span class="badge" id="bF"><svg class="ring" viewBox="0 0 42 42"><circle cx="21" cy="21" r="18" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="21" cy="21" r="18" fill="none" stroke="var(--ac)" stroke-width="4" stroke-linecap="round" stroke-dasharray="36 90"/></svg><span class="chk">✓</span></span>
+            </div>
+            <div class="cbody">def fetch(url)<br>→ text</div>
+          </div>
+          <div class="card eval" id="cardEval">
+            <div class="chead">
+              <span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3h6M10 3v5.5L4.8 18a2 2 0 0 0 1.8 3h10.8a2 2 0 0 0 1.8-3L14 8.5V3"/></svg></span>
+              <span class="cname">grounded</span><span class="clbl">EVAL</span>
+              <span class="badge" id="bE"><svg class="ring" viewBox="0 0 42 42"><circle cx="21" cy="21" r="18" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="21" cy="21" r="18" fill="none" stroke="var(--ac)" stroke-width="4" stroke-linecap="round" stroke-dasharray="36 90"/></svg><span class="chk">✓</span></span>
+            </div>
+            <div class="cbody">assert cited<br>score ≥ 0.9</div>
+          </div>
+          <div class="card io" id="cardSchema">
+            <div class="chead">
+              <span class="cic" style="font-family:var(--mono);font-weight:800;font-size:30px;display:flex;align-items:center;justify-content:center">{ }</span>
+              <span class="cname">schema</span><span class="clbl">TYPED I/O</span>
+              <span class="badge" id="bC"><svg class="ring" viewBox="0 0 42 42"><circle cx="21" cy="21" r="18" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="21" cy="21" r="18" fill="none" stroke="var(--ac)" stroke-width="4" stroke-linecap="round" stroke-dasharray="36 90"/></svg><span class="chk">✓</span></span>
+            </div>
+            <div class="cbody">in: question<br>out: answer</div>
+          </div>
+        </div>
       </div>
-      <div class="filebody"><span id="ftext"></span><span class="filecaret" id="fcaret"></span></div>
-    </div>
-  </div></div>
+    </div></div>
 
-  <!-- terminal -->
-  <div class="scene"><div id="term">
-    <div class="termwin">
-      <div class="termbar"><span class="dot dr"></span><span class="dot dy"></span><span class="dot dg"></span>
-        <span class="termtitle">bash — puras</span></div>
-      <div class="termbody">
-        <div class="tline" id="tl0" style="opacity:1"><span class="pr">$</span> <span class="cmd" id="tcmd"></span><span class="termcaret" id="tcaret"></span></div>
-        <div class="tline" id="tl1"><span class="out">Collecting puras</span></div>
-        <div class="tline" id="tl2"><span class="out">  Downloading puras-1.0.0-py3-none-any.whl (48 kB)</span></div>
-        <div class="tline" id="tl3"><span class="out">Installing collected packages: puras</span></div>
-        <div class="tline" id="tl4"><span class="ok">Successfully installed puras-1.0.0</span></div>
+    <!-- terminal result card -->
+    <div class="scene"><div id="termcard">
+      <div class="termwin">
+        <div class="termbar"><span class="tdot dr"></span><span class="tdot dy"></span><span class="tdot dg"></span><span class="ttitle">bash — puras</span></div>
+        <div class="termbody">
+          <div class="tline" id="rl0" style="opacity:1"><span class="pr">$</span> <span class="cmd">pip install puras</span></div>
+          <div class="tline" id="rl1"><span class="out">Collecting puras</span></div>
+          <div class="tline" id="rl2"><span class="out">Installing collected packages: puras</span></div>
+          <div class="tline" id="rl3"><span class="ok">Successfully installed puras-1.0.0</span></div>
+        </div>
       </div>
-    </div>
-  </div></div>
-
-  <!-- pipeline -->
-  <div id="pipe">
-    <div class="pipetitle" id="ptitle">SKILL.md → live pipeline</div>
-    <div class="pipesub" id="psub">read the documents · split into categories</div>
-    <div class="row" id="prow">
-      <div class="node" id="n1"><div class="nic">📥</div><div class="nlb">Ingest</div><div class="nsub">load documents</div>
-        <svg class="ring" id="r1" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="17" fill="none" stroke="#39c0ed" stroke-width="4" stroke-linecap="round" stroke-dasharray="34 80"/></svg>
-        <div class="chk" id="k1">✓</div></div>
-      <div class="conn" id="c1"><div class="fill" id="cf1"></div><div class="pkt" id="pk1"></div></div>
-      <div class="node" id="n2"><div class="nic">✂️</div><div class="nlb">Parse</div><div class="nsub">extract text</div>
-        <svg class="ring" id="r2" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="17" fill="none" stroke="#39c0ed" stroke-width="4" stroke-linecap="round" stroke-dasharray="34 80"/></svg>
-        <div class="chk" id="k2">✓</div></div>
-      <div class="conn" id="c2"><div class="fill" id="cf2"></div><div class="pkt" id="pk2"></div></div>
-      <div class="node" id="n3"><div class="nic">🧠</div><div class="nlb">Read</div><div class="nsub">understand · Claude</div>
-        <svg class="ring" id="r3" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="17" fill="none" stroke="#39c0ed" stroke-width="4" stroke-linecap="round" stroke-dasharray="34 80"/></svg>
-        <div class="chk" id="k3">✓</div></div>
-      <div class="conn" id="c3"><div class="fill" id="cf3"></div><div class="pkt" id="pk3"></div></div>
-      <div class="node" id="n4"><div class="nic">🏷️</div><div class="nlb">Classify</div><div class="nsub">assign category</div>
-        <svg class="ring" id="r4" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="17" fill="none" stroke="#39c0ed" stroke-width="4" stroke-linecap="round" stroke-dasharray="34 80"/></svg>
-        <div class="chk" id="k4">✓</div></div>
-      <div class="conn" id="c4"><div class="fill" id="cf4"></div><div class="pkt" id="pk4"></div></div>
-      <div class="node" id="n5"><div class="nic">📦</div><div class="nlb">Output</div><div class="nsub">grouped results</div>
-        <svg class="ring" id="r5" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle cx="20" cy="20" r="17" fill="none" stroke="#39c0ed" stroke-width="4" stroke-linecap="round" stroke-dasharray="34 80"/></svg>
-        <div class="chk" id="k5">✓</div></div>
-    </div>
-    <div class="donechip" id="donechip">✓ Pipeline complete — 5/5 nodes</div>
-  </div>
+    </div></div>
 
   </div><!-- /#world -->
 
+  <!-- full-screen close-ups (outside camera, always crisp) -->
+  <div class="closeup" id="editor"><div class="ed"><span id="edText"></span><span class="bigcaret" id="edCaret"></span></div></div>
+  <div class="closeup" id="termcu"><div class="ed"><span class="pr">$</span><span id="tcuText"></span><span class="bigcaret" id="tcuCaret"></span></div></div>
+
   <div id="vignette"></div>
   <div id="brand"><div class="lg"></div><div class="wm">puras</div></div>
+  <div id="livechip"><span>● live — run complete</span></div>
   <div id="caption"><span class="ct" id="captiontext"></span></div>
 </div>
 
@@ -196,161 +179,104 @@ function caption(tl, text, at, dur){
   tl.to("#caption",{opacity:1,duration:.3}, at);
   tl.to("#caption",{opacity:0,duration:.3}, at+dur-0.3);
 }
-function typeInto(tl, el, str, start, cps){
-  const step = 1/cps;
-  for(let i=0;i<str.length;i++){
-    tl.call(()=>{ $(el).textContent = str.slice(0,i+1); }, null, start + i*step);
+// type multiline (\n → <br>) into el, with optional class wrapping per line marker "##"
+function typeLines(tl, el, text, start, cps){
+  const step=1/cps;
+  for(let i=1;i<=text.length;i++){
+    const sub=text.slice(0,i).replace(/\n/g,"<br>").replace(/## /g,'<span class="h">## </span>');
+    tl.call(()=>{ $(el).innerHTML=sub; }, null, start+(i-1)*step);
   }
-  return start + str.length*step;
+  return start + text.length*step;
+}
+function blink(tl, el, from, to, n){
+  for(let i=0;i<n;i++){ tl.to(el,{opacity:1,duration:.001},from+i*0.5).to(el,{opacity:0,duration:.001},from+0.27+i*0.5); }
+  tl.set(el,{opacity:1}, to);
 }
 
 const tl = gsap.timeline({paused:true, defaults:{ease:"power3.inOut"}});
 
-/* ================= SCENE 0 : empty screen, shapes appear & leave ================= */
-tl.to("#brand",{opacity:1,duration:.6}, 0.3);
-const shapes=[
-  ["#sh1",{x:560,y:300}],["#sh2",{x:1300,y:340}],["#sh3",{x:1380,y:760}],
-  ["#sh4",{x:520,y:720}],["#sh5",{x:960,y:300}],["#sh6",{x:980,y:780}],
-];
-shapes.forEach((s,i)=>{
-  const sel=s[0], p=s[1];
-  gsap.set(sel,{left:p.x-75, top:p.y-75, rotation:gsap.utils.random(-40,40), scale:.4});
-  tl.to(sel,{opacity: sel==="#sh4"?1:1, scale:1, rotation:0, duration:.7, ease:"back.out(1.6)"}, 0.3 + i*0.12);
-  // float
-  tl.to(sel,{y:"+=18", duration:1.0, ease:"sine.inOut"}, 1.1+i*0.05);
+/* ============ BEAT 1 — extreme close-up: type SKILL.md ============ */
+tl.to("#brand",{opacity:1,duration:.6}, 0.2);
+tl.to("#editor",{opacity:1,duration:.5}, 0.0);
+blink(tl,"#edCaret",0.2,0.7,1);
+const skillText="## triage\n## research\n## draft";
+const t1=typeLines(tl,"#edText",skillText,0.75,15);   // ends ~2.5
+blink(tl,"#edCaret",t1+0.05,t1+0.85,2);               // hold + blink
+const pullA=t1+0.95;                                   // ~3.5
+
+/* ============ pull back (motion-blurred) → SKILL.md card ============ */
+gsap.set("#editor",{transformOrigin:"50% 42%"});
+tl.to("#editor",{scale:.26, y:-150, filter:"blur(16px)", opacity:0, duration:.8, ease:"power3.in"}, pullA);
+// prompt card carries same text
+$("#promptBody") && ($("#promptBody").innerHTML='<span class="h">## </span>triage<br><span class="h">## </span>research<br><span class="h">## </span>draft');
+gsap.set("#pack",{scale:.9});
+tl.to("#pack",{opacity:1, scale:1, duration:.7, ease:"power3.out"}, pullA+0.15);
+gsap.set(["#cardSearch","#cardFetch","#cardEval","#cardSchema"],{opacity:0,y:50,scale:.82});
+
+/* ============ BEAT 2 — assemble component cards ============ */
+const asm=pullA+0.7;     // ~4.2
+["#cardSearch","#cardFetch","#cardEval","#cardSchema"].forEach((c,i)=>{
+  tl.to(c,{opacity:1,y:0,scale:1,duration:.6,ease:"back.out(1.5)"}, asm+i*0.18);
 });
-// shapes converge to center & vanish (collapsing into the file)
-shapes.forEach((s,i)=>{
-  tl.to(s[0],{left:910, top:480, scale:.15, opacity:0, rotation:120, duration:.8, ease:"power3.in"}, 2.3+i*0.04);
+caption(tl,"One file → tools, evals, typed I/O", asm+0.4, 2.6);
+const packHold=asm+1.0; // ~5.2
+
+/* ============ BEAT 3 — extreme close-up: pip install puras ============ */
+const term1=packHold+2.0;  // ~7.2
+tl.to("#pack",{scale:.78, filter:"blur(14px)", opacity:0, duration:.7, ease:"power3.in"}, term1);
+tl.to("#termcu",{opacity:1,duration:.5}, term1+0.3);
+blink(tl,"#tcuCaret",term1+0.5,term1+1.0,1);
+const t2=typeLines(tl,"#tcuText"," pip install puras",term1+1.0,16); // ends ~9.3
+blink(tl,"#tcuCaret",t2+0.05,t2+0.5,1);
+const ent=t2+0.6;          // enter
+
+/* pull back → terminal result card */
+tl.to("#termcu",{scale:.5, filter:"blur(14px)", opacity:0, duration:.6, ease:"power3.in"}, ent);
+gsap.set("#termcard",{scale:.92});
+tl.to("#termcard",{opacity:1,scale:1,duration:.6,ease:"power3.out"}, ent+0.2);
+["#rl1","#rl2"].forEach((l,i)=>tl.fromTo(l,{opacity:0,y:8},{opacity:1,y:0,duration:.3}, ent+0.5+i*0.32));
+tl.fromTo("#rl3",{opacity:0,y:8},{opacity:1,y:0,duration:.4,ease:"back.out(1.6)"}, ent+1.3);
+caption(tl,"Install once", term1+0.6, 2.0);
+const termHold=ent+1.9;    // ~11.8
+
+/* ============ BEAT 4 — go live: cards light up in run order ============ */
+tl.to("#termcard",{scale:.9, filter:"blur(12px)", opacity:0, duration:.6, ease:"power3.in"}, termHold);
+tl.to("#pack",{opacity:1, scale:1, filter:"blur(0px)", duration:.6, ease:"power3.out"}, termHold+0.3);
+caption(tl,"Runs live — tools, grounded eval, typed I/O", termHold+0.6, 2.8);
+
+const runStart=termHold+1.1;  // ~12.9
+const seq=[["#cardPrompt","#bP"],["#cardSearch","#bS"],["#cardFetch","#bF"],["#cardEval","#bE"],["#cardSchema","#bC"]];
+const stepDur=0.85;
+seq.forEach((it,i)=>{
+  const [card,badge]=it; const t0=runStart+i*stepDur;
+  tl.to(badge,{opacity:1,duration:.2}, t0);
+  tl.call(()=>{ $(card).classList.add("active"); }, null, t0);
+  tl.to(badge+" .ring",{rotation:360*1.4, transformOrigin:"50% 50%", duration:stepDur*0.72, ease:"none"}, t0);
+  tl.to(card,{y:-7,duration:.25,ease:"power2.out"}, t0);
+  tl.to(card,{y:0,duration:.3,ease:"power2.in"}, t0+stepDur*0.7);
+  const td=t0+stepDur*0.72;
+  tl.to(badge+" .ring",{opacity:0,duration:.15}, td);
+  tl.to(badge+" .chk",{opacity:1,scale:1,duration:.35,ease:"back.out(2.2)"}, td);
 });
+const runEnd=runStart+seq.length*stepDur; // ~17.2
 
-/* ================= SCENE 1 : SKILL.md file appears ================= */
-gsap.set("#file",{scale:.6, y:30});
-tl.to("#file",{opacity:1, scale:1, y:0, duration:.8, ease:"back.out(1.5)"}, 2.9);
-caption(tl,"A new skill — written in plain language", 3.2, 2.4);
-// blink caret then type the markdown content (HTML so we keep coloring)
-const md =
-`<span class="h"># SKILL.md</span><br><br>`+
-`<span class="k">## Task</span><br>`+
-`<span class="t">Read the documents and</span><br>`+
-`<span class="t">split them into categories.</span><br><br>`+
-`<span class="k">## Output</span><br>`+
-`<span class="s">- category</span><br>`+
-`<span class="s">- confidence</span>`;
-// reveal line by line (clip via progressive innerHTML chunks)
-const chunks = md.split("<br>");
-let acc="";
-const fStart=3.7;
-chunks.forEach((c,i)=>{
-  acc += c + (i<chunks.length-1?"<br>":"");
-  const cur=acc;
-  tl.call(()=>{ $("#ftext").innerHTML=cur; }, null, fStart + i*0.18);
-});
-tl.fromTo("#fcaret",{opacity:1},{opacity:0,duration:.001,repeat:5,yoyo:true,repeatDelay:.18}, 3.7);
+/* ============ finish ============ */
+tl.fromTo("#livechip",{opacity:0,y:18},{opacity:1,y:0,duration:.6,ease:"back.out(1.7)"}, runEnd+0.1);
+tl.to("#pack",{scale:1.03,duration:1.8,ease:"power1.inOut"}, runEnd+0.2);
 
-/* ================= transition : file blurs + slides left, terminal in ================= */
-tl.to("#file",{x:-1400, filter:"blur(20px)", opacity:0, scale:.9, duration:.9, ease:"power3.in"}, 6.6);
-
-/* ================= SCENE 2 : terminal + pip install ================= */
-tl.to("#term",{opacity:1, x:0, duration:.8, ease:"power3.out"}, 6.9);
-caption(tl,"Install once", 7.2, 2.0);
-// caret blink before typing
-tl.fromTo("#tcaret",{opacity:1},{opacity:0,duration:.001,repeat:3,yoyo:true,repeatDelay:.2}, 7.4);
-const cmdEnd = typeInto(tl,"#tcmd","pip install puras", 8.0, 13);
-// "enter": hide caret, reveal output lines
-tl.to("#tcaret",{opacity:0,duration:.1}, cmdEnd+0.15);
-["#tl1","#tl2","#tl3"].forEach((l,i)=>{
-  tl.fromTo(l,{opacity:0,y:6},{opacity:1,y:0,duration:.25}, cmdEnd+0.35 + i*0.35);
-});
-tl.fromTo("#tl4",{opacity:0,y:6},{opacity:1,y:0,duration:.35,ease:"back.out(1.6)"}, cmdEnd+1.6);
-
-/* ================= transition : terminal → pipeline ================= */
-const pipeStart = cmdEnd + 2.4;
-tl.to("#term",{opacity:0, scale:.9, filter:"blur(14px)", duration:.7, ease:"power3.in"}, pipeStart);
-tl.to("#pipe",{opacity:1, duration:.5}, pipeStart+0.3);
-caption(tl,"…compiles into a running pipeline", pipeStart+0.4, 2.6);
-tl.fromTo("#ptitle",{opacity:0,y:18},{opacity:1,y:0,duration:.5}, pipeStart+0.5);
-tl.fromTo("#psub",{opacity:0,y:14},{opacity:1,y:0,duration:.5}, pipeStart+0.7);
-
-/* draw nodes + connectors appearing */
-const nodes=["#n1","#n2","#n3","#n4","#n5"];
-const conns=["#c1","#c2","#c3","#c4"];
-const drawStart=pipeStart+1.0;
-nodes.forEach((n,i)=>{
-  tl.to(n,{opacity:1, scale:1, duration:.5, ease:"back.out(1.5)"}, drawStart + i*0.18);
-  if(i<4) tl.to(conns[i],{opacity:1,duration:.3}, drawStart + i*0.18 + 0.2);
-});
-
-/* ================= node activation, one by one ================= */
-const actStart = drawStart + 1.4;
-const stepDur = 0.95;
-for(let i=0;i<5;i++){
-  const t0 = actStart + i*stepDur;
-  const ni="#n"+(i+1), ri="#r"+(i+1), ki="#k"+(i+1);
-  // activate
-  tl.call(()=>{ $(ni).classList.add("active"); }, null, t0);
-  tl.to(ri,{opacity:1,duration:.2}, t0);
-  // deterministic spinner: rotate ring during active window
-  tl.to(ri,{rotation:360*1.5, transformOrigin:"50% 50%", duration:stepDur*0.72, ease:"none"}, t0);
-  tl.to(ni,{y:-6, duration:.25, ease:"power2.out"}, t0);
-  tl.to(ni,{y:0, duration:.3, ease:"power2.in"}, t0+stepDur*0.7);
-  // complete → check + green
-  const tDone=t0+stepDur*0.72;
-  tl.to(ri,{opacity:0,duration:.15}, tDone);
-  tl.call(()=>{ $(ni).classList.remove("active"); $(ni).classList.add("done"); }, null, tDone);
-  tl.to(ki,{opacity:1,scale:1,duration:.35,ease:"back.out(2.2)"}, tDone);
-  // packet travels to next node along connector
-  if(i<4){
-    const cf="#cf"+(i+1), pk="#pk"+(i+1);
-    tl.fromTo(pk,{opacity:1,left:"0%"},{left:"100%",duration:.4,ease:"power1.inOut"}, tDone+0.05);
-    tl.to(cf,{width:"100%",duration:.4,ease:"power1.inOut"}, tDone+0.05);
-    tl.to(pk,{opacity:0,duration:.1}, tDone+0.45);
-  }
-}
-
-/* ================= finish ================= */
-const finish = actStart + 5*stepDur + 0.1;
-tl.to("#donechip",{opacity:1, y:0, duration:.6, ease:"back.out(1.7)"}, finish);
-tl.to("#pipe",{scale:1.02, duration:1.6, ease:"power1.inOut"}, finish+0.2);
-caption(tl,"From one file to a live multi-node skill", finish+0.1, 2.2);
-
-/* ================= CAMERA =================
-   Cinematic camera over #world. To center world-point (x,y) at the viewport
-   center (960,540) at scale s:  tx = 960 - s*x,  ty = 540 - s*y  (origin 0 0). */
-const world = $("#world");
-const cam = {x:960, y:540, s:1.06};
-const setCam = ()=>{ const s=cam.s;
-  world.style.transform = `translate(${(960 - s*cam.x).toFixed(2)}px,${(540 - s*cam.y).toFixed(2)}px) scale(${s})`; };
+/* ===================== CAMERA (gentle; close-ups handled by full-screen layers) ===================== */
+const world=$("#world");
+const cam={x:960,y:540,s:1.04};
+const setCam=()=>{const s=cam.s;world.style.transform=`translate(${(960-s*cam.x).toFixed(2)}px,${(540-s*cam.y).toFixed(2)}px) scale(${s})`;};
 setCam();
-function camTo(at, dur, x, y, s, ease="power2.inOut"){
-  tl.to(cam, {x, y, s, duration:dur, ease, onUpdate:setCam}, at);
-}
-
-// intro — gentle Ken Burns drift (no dead frames)
-camTo(0.0, 2.6, 1015, 512, 1.05, "sine.inOut");
-// settle to frame the file as the shapes collapse into it
-camTo(2.7, 0.6, 960, 540, 1.0, "power2.out");
-// push-in close-up on the SKILL.md body as typing begins
-camTo(3.4, 0.7, 950, 548, 1.42, "power2.inOut");
-// FOLLOW THE TYPING CARET down the lines (the requested move)
-camTo(4.1, 1.3, 985, 612, 1.46, "sine.inOut");
-// pull back out before the file blurs/slides away
-camTo(6.15, 0.5, 960, 540, 1.0, "power2.inOut");
-// terminal — push-in to the command line
-camTo(7.4, 0.7, 800, 505, 1.3, "power2.inOut");
-// follow the command as it types to the right
-camTo(8.1, 1.2, 905, 510, 1.32, "sine.inOut");
-// pull back to reveal the install output + success
-camTo(9.5, 0.7, 960, 545, 1.06, "power2.inOut");
-// frame the whole pipeline as it materializes
-camTo(pipeStart, 0.9, 960, 555, 1.0, "power2.inOut");
-// PAN ACROSS NODES as they light up, following the action left→right
-const nodeCx=[360,660,960,1260,1560];
-camTo(actStart-0.45, 0.5, nodeCx[0], 560, 1.13, "power2.out");
-for(let i=0;i<5;i++){ camTo(actStart + i*stepDur, stepDur*0.9, nodeCx[i], 560, 1.13, "sine.inOut"); }
-// pull back wide to reveal the full pipeline + done chip, then a slow push
-camTo(finish, 0.9, 960, 568, 0.99, "power2.out");
-camTo(finish+1.0, 1.8, 960, 560, 1.04, "sine.inOut");
+function camTo(at,dur,x,y,s,ease="sine.inOut"){ tl.to(cam,{x,y,s,duration:dur,ease,onUpdate:setCam},at); }
+camTo(pullA+0.15, 1.4, 960, 540, 1.0, "power2.out");      // settle on pack
+camTo(asm, 3.4, 960, 540, 1.07);                          // slow push-in during assemble
+camTo(termHold+0.3, 1.2, 960, 540, 1.0, "power2.out");    // reset for run
+camTo(runStart-0.2, 0.6, 720, 470, 1.1);                  // ease toward first card
+for(let i=0;i<5;i++){ const cx=[720,720,1180,720,1180][i], cy=[460,720,720,720,720][i]; camTo(runStart+i*stepDur, stepDur*0.9, cx, cy, 1.1); }
+camTo(runEnd, 1.0, 960, 560, 1.0, "power2.out");          // pull back to full pack
+camTo(runEnd+1.0, 1.6, 960, 545, 1.05);                   // final slow push
 
 window.__DURATION__ = tl.duration() + 0.4;
 window.__seek = (t)=>{ tl.time(Math.min(t, tl.duration()), false); };
