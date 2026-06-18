@@ -171,15 +171,14 @@ re-derive. The kit has NO scene flow — you compose the timeline.
    scene · camera follows it · real brand logo · single `accent_color`. Satisfy the
    Deterministic contract; set `__BLUR_SEGMENTS__` to your real fast windows. One
    self-contained file; keep the GSAP CDN `<script>`.
-4. **Self-check (REQUIRED — this is the planning step the Stripe test skipped).**
-   Preview the html with `web_screenshot` at **≥5 spread times** (≈10%, 30%, 50%,
-   70%, 90% of `duration_sec` — pass `?t=<sec>` or seek then shoot). For EACH shot:
-   - is there a clear focal element **filling ⅓–½ of the frame** (not tiny)?
-   - is the frame **non-empty** (no black/dead time)?
-   - is text **non-overlapping**, un-clipped, readable?
-   - real brand logo (not the ✷ spark), single accent, **Lucide** icons?
-   Also confirm `t≈0` and `t≈duration` are composed (not black). FIX every issue in
-   the html and re-preview until all shots pass — THEN render.
+4. **Self-check (BOUNDED — do not loop).** Preview the html with `web_screenshot`
+   at just **3 times** (≈15%, 50%, 85% of duration via `?t=<sec>`). Look ONLY for
+   clear breakages: a black/empty frame, a tiny focal element (<⅓ of frame), badly
+   overlapping/clipped text, or the wrong logo. Do **ONE** fix pass for what you
+   find; you may re-preview those spots **once**. **Then RENDER no matter what —
+   at most 2 preview rounds (≤6 screenshots) total.** Don't chase perfection in
+   previews: the render is the deliverable and the job has a tight budget, so
+   spending it on endless previews means NO video ships (that already happened once).
 5. **Render it.** Call `render_video({ "html": <the full html string>, "fps": 30,
    "mblur": 8 })`. It returns `{ drive_path, video_url, duration_sec, frames }`.
    The render takes a couple of minutes (it installs the browser on a cold worker).
