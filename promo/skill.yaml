@@ -58,21 +58,21 @@ output_schema:
       description: Renk/metin/tempo notları (opsiyonel).
 
 tools:
-  - name: get_template
+  - name: get_kit
     description: >
-      Cilalı referans animasyon HTML'ini (Claude-Design; tüm CSS + hareket
-      makinesi: kamera, morph, cursor, spark, gerund loader, dark reveal, plan
-      checklist, __BLUR_SEGMENTS__) döndürür. BURADAN BAŞLA: sıfırdan yazma,
-      bunu brief'e uyarla — makineyi koru, sadece sahne metni/etiket/palet
-      vurgusu/timing'i değiştir.
-    entrypoint: get_template.py:run
+      Craft KIT'i döndürür: renk/tipografi token'ları, boilerplate shell (kamera /
+      cursor / spark / type helper'ları + __DURATION__/__seek/__BLUR_SEGMENTS__
+      wiring) ve drop-in component kataloğu. **BİTMİŞ AKIŞ/TIMELINE İÇERMEZ** —
+      senaryoyu/sahneleri sen kurarsın. Buradan token + helper + component al,
+      brief'in kendi konseptine göre özgün bir timeline kur.
+    entrypoint: get_kit.py:run
     input_schema:
       type: object
       properties: {}
     output_schema:
       type: object
       properties:
-        html: { type: text }
+        kit: { type: text }
 
   - name: render_video
     description: >

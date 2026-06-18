@@ -29,11 +29,13 @@ Finish with exactly one `set_output`. No prose outside `set_output`.
   wordmark. **NEVER stamp the Anthropic spark on another brand**, and don't invent a
   wrong logo. Choose `accent_color` and theme (light vs dark) to match the brand
   (e.g. Supabase → dark + emerald; a finance app → light + deep blue).
-- **Craft that should appear (brand-adapted):** real product UI (rounded cards,
-  soft shadows, real buttons); a **cursor** that arcs in and clicks (button depress
-  + ripple); a **loader** = a small brand mark/spinner + an italic-serif gerund
-  cycling playful words; a tasteful **reveal**; and where it fits, a **checklist**
-  that ticks off **one item at a time**.
+- **Optional ingredients — pick ONLY what serves THIS story (never include by
+  reflex):** a cursor that clicks real UI · a terminal · a code editor · a
+  node/graph reveal · a chart/KPI counter · a phone frame · a loader pill (brand
+  mark + italic-serif gerund) · a checklist that ticks one at a time · kinetic
+  typography. **You rarely need more than 2–3 of these, and none is mandatory** — a
+  great piece can be pure kinetic typography, or one device demo, end to end. (The
+  loader and checklist are *especially* over-used — skip them unless they truly fit.)
 
 ## Direction — NON-NEGOTIABLE (this is what makes it readable, not busy)
 
@@ -64,29 +66,37 @@ that makes promos feel amateur. Enforce in EVERY scene:
 > If you ever animate two things at once, STOP and split them into two scenes that
 > the camera visits one after the other.
 
-## Composition — INVENT it (this is where the creativity lives)
+## Concept first — invent a UNIQUE timeline (do NOT reuse one flow)
 
-There is **no fixed scene list**. Read the brief and design the storyboard that
-best tells THAT story: choose the scenes, their order, count, layout and reveal
-metaphor — and vary it run to run. Reach for (mix, replace, invent beyond this):
+Before storyboarding, invent a **concept** for THIS brief: a central metaphor or
+narrative spine that only this product would have, and let the timeline follow it.
+The piece should feel authored for the brief — not a fill-in-the-blanks template.
 
-- **layouts:** centered hero · split-screen · device/phone mockup · browser/app
-  window · full-bleed dark stage · before/after · a gallery/grid finale.
-- **"result" reveals:** a node/pipeline graph · a globe/map with glowing arcs · a
-  chart/dashboard animating in · a phone prototype · code typing into an editor ·
-  cards assembling into a layout.
-- **devices:** a cursor that types & clicks real UI · a terminal · a tweaks panel
-  with sliders · a plan checklist ticking · kinetic headline typography.
+⛔ **BANNED default flow.** Do NOT default to: wordmark → a "type a prompt" card →
+a spark / "Scaffolding…" gerund loader → 3–4 glowing nodes lighting up → an
+editor + checklist → wordmark. If your storyboard resembles that, **throw it out**
+and find a concept-driven shape instead. (See the many *Worked examples* below —
+notice each has a *different shape*; do not converge on one.)
 
-The flow `intro → prompt+morph → loader → dark reveal → editor → end` is **ONE
-proven pattern** (it's what `get_template` returns). Use it when it fits, but feel
-free to drop/add/reorder beats and build a different shape for a different brief.
+Pick a **spine** that fits the brief, e.g.:
 
-What must NOT vary run-to-run = the **craft / quality bar** AND the **Direction
-rules** (one action per scene · one focal point · camera follows the action): the
-House style, Direction, Motion principles and the Deterministic contract. **Keep
-those; invent everything else.** Whatever layout you pick, each scene still shows
-exactly ONE action that the camera frames and follows.
+- **journey** — follow one object/datum through the product (a request: client →
+  auth → db → realtime push; a file: upload → transform → CDN; a message → inbox).
+- **transformation / before→after** — messy input becomes a clean result.
+- **assembly** — separate pieces fly together into the finished thing.
+- **single hero demo** — ONE feature shown deeply, close-up, end to end.
+- **day-in-the-life / scenario** — a real task done with the product.
+- **kinetic typography** — the idea told in moving words + one or two visuals.
+- **metaphor** — visualize the value as a physical thing (a vault, a pipe, a map).
+- **number/impact** — a stat or counter drives the story.
+- **comparison** — old painful way vs the product's way.
+
+Then storyboard that spine as **one-action beats** (see *Direction*), choosing
+layouts and components freely from the kit, and **vary the structure every brief**.
+
+What must NOT vary = the **craft / quality bar** + the **Direction rules** (one
+action per scene · one focal point · camera follows the action): House style,
+Direction, Motion principles, Deterministic contract. Keep those; invent the rest.
 
 ## Motion principles (enforce)
 
@@ -128,53 +138,28 @@ The generated `html` must be a single self-contained file that:
   reveals/fly-ins, the two camera zooms) — not slow holds. The renderer blurs
   only there, so be precise.
 
-## Reusable snippets to include
+## Helpers & components
 
-Spark generator:
-```js
-function sparkSVG(){let s='';for(let i=0;i<12;i++){const a=i*30,l=i%3===0;
- s+=`<line x1=50 y1=50 x2=50 y2=${l?12:20} transform="rotate(${a} 50 50)"
- stroke="currentColor" stroke-width=${l?7:5} stroke-linecap="round"/>`;}
- return `<svg viewBox="0 0 100 100">${s}</svg>`;}
-document.querySelectorAll('.spark').forEach(e=>e.innerHTML=sparkSVG());
-```
-Camera + cursor:
-```js
-const world=document.querySelector('#world'),cam={x:960,y:540,s:1};
-const setCam=()=>{const s=cam.s;world.style.transform=
- `translate(${(960-s*cam.x).toFixed(2)}px,${(540-s*cam.y).toFixed(2)}px) scale(${s})`;};setCam();
-function camTo(at,dur,x,y,s,e="sine.inOut"){tl.to(cam,{x,y,s,duration:dur,ease:e,onUpdate:setCam},at);}
-function wc(el){let x=el.offsetWidth/2,y=el.offsetHeight/2,n=el;
- while(n&&n.id!=='world'){x+=n.offsetLeft;y+=n.offsetTop;n=n.offsetParent;}return{x,y};}
-function curTo(at,dur,sel){const c=wc(document.querySelector(sel));
- tl.to('#cursor',{left:c.x,top:c.y,duration:dur,ease:'power3.inOut'},at);}
-function curClick(at){tl.to('#cursor',{scale:.82,duration:.08},at).to('#cursor',{scale:1,duration:.18},at+.08);
- tl.fromTo('#cripple',{opacity:.8,scale:.3},{opacity:0,scale:1.1,duration:.5},at);}
-```
-Morph (card → pill, not fade):
-```js
-tl.set('#morph',{height:()=>document.querySelector('#morph').offsetHeight},at);
-tl.to('#promptInner',{opacity:0,duration:.22},at);
-tl.to('#morph',{width:380,height:104,borderRadius:22,duration:.62,ease:'power4.inOut'},at+0.18);
-tl.to('#loadInner',{opacity:1,duration:.3},at+0.52);
-```
+All of it — design tokens, the boilerplate shell, and the helper JS (`sparkSVG`,
+camera `camTo`/`setCam`/`wc`, cursor `curTo`/`curClick`, `typeInto`, `blink`) plus
+a drop-in component catalog — comes from **`get_kit()`**. Lift from there; don't
+re-derive. The kit has NO scene flow — you compose the timeline.
 
 ## Steps
 
-1. **Pull the kit + quality bar.** Call `get_template()` → the reference HTML.
-   Treat it as your **component library and the finish bar**, NOT a script to copy:
-   it shows exactly how the camera, morph, cursor, spark, gerund loader, reveals,
-   plan checklist, palette/type and `__BLUR_SEGMENTS__` are built to a high finish.
-   Lift its CSS tokens, components and helper JS; that is what guarantees quality.
-2. **Direct the piece.** From the brief, **INVENT the storyboard** (see
-   *Composition*): pick the scenes / order / layouts / reveal that fit THIS brief —
-   don't just refill the template's slots. Build the `storyboard` array.
-3. **Build the `html`.** Compose your storyboard by reusing the kit's CSS tokens,
-   components and helpers (`camTo` / cursor / `sparkSVG` / morph …). You may add,
-   reorder, replace or invent scenes freely. The ONLY hard rules: keep the House
-   style + Motion principles (the craft) and satisfy the Deterministic contract;
-   use `accent_color` as the single accent; set `__BLUR_SEGMENTS__` to your actual
-   fast windows. One self-contained file; keep the GSAP CDN `<script>`.
+1. **Pull the kit.** Call `get_kit()` → design tokens, the boilerplate shell
+   (camera / cursor / spark / type helpers + the `__DURATION__`/`__seek`/
+   `__BLUR_SEGMENTS__` wiring) and a component catalog. It has **NO scene flow** —
+   that's yours to invent. This is the finish bar; the polish comes from here.
+2. **Concept + storyboard.** From the brief invent the concept/spine (see *Concept
+   first*), then storyboard it as one-action beats (see *Direction*). Build the
+   `storyboard` array. **Sanity check it does NOT match the banned default flow**
+   and is shaped differently from your last run.
+3. **Build the `html`.** Start from the kit's boilerplate shell and add YOUR scenes
+   with its tokens, helpers and components, restyled to the brand. One action per
+   scene · camera follows it · real brand logo · single `accent_color`. Satisfy the
+   Deterministic contract; set `__BLUR_SEGMENTS__` to your real fast windows. One
+   self-contained file; keep the GSAP CDN `<script>`.
 4. **Render it.** Call `render_video({ "html": <the full html string>, "fps": 30,
    "mblur": 8 })`. It returns `{ drive_path, video_url, duration_sec, frames }`.
    The render takes a couple of minutes (it installs the browser on a cold worker).
@@ -188,37 +173,52 @@ tl.to('#loadInner',{opacity:1,duration:.3},at+0.52);
    Use the `drive_path` for the `video` field (it's the durable, playable handle);
    `video_url` may be empty inside the worker and that's fine.
 
-## Worked examples (note: ONE action per scene, camera follows it, real brand logo)
+## Worked examples — EIGHT different shapes (never converge on one)
 
-**A — "Supabase" (the right way).** Brief: open-source Firebase on Postgres.
-`product_name=Supabase`, accent `#3ECF8E`, **dark**. Logo = the **Supabase
-wordmark** (clean sans, white) — *not* the spark.
+Each uses a **different spine, theme and logo**. They exist to show RANGE — do not
+copy one; invent a ninth shape for your brief. In every one: one action per scene,
+camera follows it, real brand identity, sequential (never two actions at once).
 
-| t | scene · ONE action | camera |
-|---|---|---|
-| 0.0–2.8 | Wordmark "Supabase" + small emerald mark eases in (near-black) | centered, tiny push-in |
-| 2.8–6.8 | CLOSE-UP on a code editor; a single line types `createClient(url, key)` | tight on the caret, follows it · **no terminal on screen** |
-| 6.8–8.6 | Camera eases back; one green ✓ "Connected" pops | pull to reveal the result |
-| 8.6–10  | Cut to a single glowing **Postgres** node, centered | settle on it |
-| 10–20   | Features ignite **one at a time** around Postgres — REST → Auth → Realtime → Storage → Edge → pgvector — camera nudges to each as it lights | track each single ignite |
-| 20–24   | Pull out: the full constellation, shown once, as the payoff | wide reveal (the only multi-element shot) |
-| 24–27.5 | One headline settles: *"Every backend feature. One Postgres."* | hold |
-| 27.5–30 | Supabase wordmark out | centered |
+1. **Supabase — feature *constellation* (dark / emerald, real green-bolt logo).**
+   wordmark in → CLOSE-UP types `createClient(url,key)` *(no terminal on screen)* →
+   "Connected ✓" pops → cut to one glowing **Postgres** node → REST, Auth, Realtime,
+   Storage, Edge, pgvector ignite **one at a time** (camera nudges to each) → pull
+   out to the whole constellation once → "Every backend feature. One Postgres." →
+   wordmark out.
 
-Wrong version (avoid): code typing on the left **while** a terminal runs on the
-right — two actions at once. Split them: type first, THEN show the run.
+2. **Acme Analytics — *assembly* (light / indigo).** wordmark → cursor drags ONE
+   event chip onto a canvas → ONE chart draws in → a KPI number ticks up → pull out
+   to the finished dashboard, once → headline + wordmark.
 
-**B — "Acme Analytics" (a different shape).** Brief: turn raw events into
-dashboards. `product_name=Acme`, accent indigo, **light**. Logo = "Acme" wordmark.
+3. **Vault (password manager) — *metaphor* (dark / amber).** a single key glints,
+   turns → a vault door (concentric rings) unlocks → inside, ONE credential card
+   materializes → it auto-fills a login field (cursor) → rings close, "Locked." →
+   wordmark. *(No nodes, no loader — a physical metaphor.)*
 
-| t | scene · ONE action | camera |
-|---|---|---|
-| 0–2.5 | "Acme" wordmark in | centered |
-| 2.5–6 | a cursor drags ONE event-stream chip onto a canvas | follow the cursor |
-| 6–10  | ONE chart draws itself in | push in on the chart |
-| 10–13 | a single KPI number ticks up | pan to the number |
-| 13–17 | pull out: the finished dashboard, once | wide reveal |
-| 17–20 | headline + wordmark out | hold |
+4. **Postpay (payments API) — *one request's journey* (dark / violet).** a coin
+   packet at "client" → travels one line to **Auth** (stamp ✓) → to **Ledger** (a
+   row writes) → branches to **Webhook** → a receipt prints. Camera tracks the
+   packet the whole way → "One call. Money settled." → wordmark.
+
+5. **Lull (meditation app) — *day-in-the-life / device hero* (warm / sage).** a
+   phone frame; morning: a breathing ring expands once → tap "Start" (cursor) → the
+   session screen calms (color shifts) → evening: a streak ticks to 7 → phone dims
+   to wordmark. *Single device, one action per beat.*
+
+6. **Shipyard (CI/CD) — *before→after* (dark / lime).** a lone red failing check,
+   big → a commit lands (one dot) → the pipeline bar fills L→R → red flips to green
+   ✓ → "Deployed in 90s" counter → wordmark.
+
+7. **Inkwell (docs) — *kinetic typography* (paper / black, almost no UI).** "Write."
+   (types) → "Together." (a second cursor joins; one word edits live) → "Anywhere."
+   (the line reflows into a phone) → wordmark. The motion IS the type.
+
+8. **Orbit (analytics) — *number-driven impact* (dark / cyan).** black screen, ONE
+   huge counter races 0 → "12.4M events/sec"; bars rise behind it once → it settles;
+   a single insight callout points at a spike → "See everything." → wordmark.
+
+Wrong, in any of these: two actions at once (e.g. code typing *while* a terminal
+runs). Split into sequential beats the camera visits one after another.
 
 ## Guardrails
 
