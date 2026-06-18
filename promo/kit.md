@@ -40,8 +40,8 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--night);fon
 .scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0}
 #vignette{position:absolute;inset:0;z-index:9;pointer-events:none;opacity:0;
   background:radial-gradient(125% 125% at 50% 47%,transparent 50%,rgba(0,0,0,.55))}
-#cursor{position:absolute;left:0;top:0;width:38px;height:38px;z-index:20;opacity:0;
-  filter:drop-shadow(0 5px 8px rgba(0,0,0,.35))}
+#cursor{position:absolute;left:0;top:0;width:34px;height:34px;color:#fff;z-index:20;opacity:0;
+  filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}  /* Lucide icon; stroke = currentColor */
 #cripple{position:absolute;width:80px;height:80px;border-radius:50%;border:2px solid var(--accent);
   z-index:19;margin:-40px 0 0 -40px;opacity:0}
 /* …your component CSS here… */
@@ -50,11 +50,13 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--night);fon
   <div class="bg" id="bg"></div>
   <div id="world"><!-- your scenes go here as .scene blocks --></div>
   <div id="vignette"></div>
-  <svg id="cursor" viewBox="0 0 24 24"><path d="M4 2 L20 12 L13 13 L17 21 L14 22 L10 14 L4 18 Z" fill="#1a1a1a" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg>
+  <i id="cursor" data-lucide="mouse-pointer-2"></i>   <!-- arrow cursor · use data-lucide="pointer" for the hand -->
   <div id="cripple"></div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script>
+if(window.lucide) lucide.createIcons();   // turns every <i data-lucide="…"> into an inline <svg>
 const $=s=>document.querySelector(s);
 const tl=gsap.timeline({paused:true,defaults:{ease:"power3.inOut"}});
 
@@ -85,7 +87,8 @@ function sparkSVG(){let s='';for(let i=0;i<12;i++){const a=i*30,l=i%3===0;
 window.__DURATION__=tl.duration()+0.5;
 window.__seek=t=>tl.time(Math.min(t,tl.duration()),false);
 window.__BLUR_SEGMENTS__=[/* [a,b] fast windows: fast moves/zooms only */];
-if(!location.search.includes("render"))tl.play(0);
+const _p=new URLSearchParams(location.search);      /* render: paused (renderer seeks) · ?t=N: freeze at N for self-check · else autoplay */
+if(_p.has('render')){} else if(_p.has('t')){window.__seek(parseFloat(_p.get('t')));} else {tl.play(0);}
 </script></body></html>
 ```
 
@@ -94,7 +97,12 @@ if(!location.search.includes("render"))tl.play(0);
 Each is a `.scene` you place in `#world`; animate with `tl`. Pick only the ones
 THIS story needs — you rarely need more than 2–3 distinct component types.
 
-- **Window chrome** `<div class="win"><div class="bar"><i·i·i> title</div><div class="body">…</div></div>` — soft shadow, rounded; for app/editor/dashboard.
+- **Icons — Lucide ONLY** (never hand-draw an SVG icon). Use `<i data-lucide="NAME"></i>`
+  and they become inline SVGs via `lucide.createIcons()`. Names you'll want:
+  `mouse-pointer-2` (arrow cursor) · `pointer` (hand) · `lock` · `credit-card` ·
+  `check` · `check-circle` · `database` · `zap` · `bell` · `shield` · `globe` ·
+  `file` · `terminal` · `search`. Color via `color`/`currentColor`, size via CSS.
+- **Window chrome** `<div class="win"><div class="bar"><i·i·i> title</div><div class="body">…</div></div>` — soft shadow, rounded; for app/editor/dashboard. Traffic dots are 3 small circles, not icons.
 - **Code editor** — `.body` with line-number gutter + mono code + a caret span you `typeInto`.
 - **Terminal** — black `.body`, green `$`, mono; lines drop in one at a time.
 - **Node + connector** — rounded box with label + a glowing border (`box-shadow:0 0 40px -6px var(--glow)`); connectors = thin lines whose `width` you tween 0→100%; a "packet" dot travels along.
@@ -112,3 +120,13 @@ There is no required order. Decide the scenes, count, layout and transitions fro
 the brief's concept (see SKILL.md → *Concept first* + *Direction* rules). Keep:
 ONE action per scene · one focal point · camera follows it · real brand identity ·
 deterministic contract (`__DURATION__`/`__seek`/`__BLUR_SEGMENTS__`, no CSS keyframes).
+
+**FILL THE FRAME.** The focal element must fill ~⅓–½ of the 1080-tall frame. If a
+layout is small/wide (e.g. a row of nodes), the camera MUST zoom so the *active*
+part fills the frame — never leave a tiny element stranded in a sea of black.
+Build small things big, or `camTo(...,scale≈1.4–2)` onto them.
+
+**NO DEAD FRAMES.** Something composed must be on screen at t=0 and at the final
+frame — no black gaps at the start or end. First content lands by ~0.3s; the last
+scene holds visibly until the end (don't fade everything to black early). Set
+`__DURATION__` so the tail is a ≤1s hold, not empty black.

@@ -62,6 +62,17 @@ that makes promos feel amateur. Enforce in EVERY scene:
    dim/blur the rest. Give a beat to read a new scene before its action starts.
 6. **Pace:** ≤ one new idea per ~3–5s; text holds ≥0.5s after settling; don't stack
    reveals.
+7. **FILL THE FRAME.** The focal element fills ~⅓–½ of the 1080-tall frame. If your
+   layout is small or wide (a row of nodes, a tiny chip), the camera MUST zoom so
+   the *active* part fills the frame — never a tiny element marooned in black.
+   *(The Stripe test failed this: the pipeline nodes were ~1/15 of the frame.)*
+8. **NO DEAD FRAMES.** Composed content is on screen at `t=0` AND at the final
+   frame — no black at the start or end. First content by ~0.3s; the closing scene
+   holds visibly; the tail is a ≤1s hold, not empty black. *(The Stripe test had
+   ~3s of black at the start and ~3s at the end — unacceptable.)*
+9. **Icons = Lucide only** (`<i data-lucide="…">` + `lucide.createIcons()`): cursor
+   `mouse-pointer-2` (arrow) / `pointer` (hand), plus `lock` / `credit-card` /
+   `check` / `database` / … **NEVER hand-draw an SVG cursor or icon.**
 
 > If you ever animate two things at once, STOP and split them into two scenes that
 > the camera visits one after the other.
@@ -160,16 +171,23 @@ re-derive. The kit has NO scene flow — you compose the timeline.
    scene · camera follows it · real brand logo · single `accent_color`. Satisfy the
    Deterministic contract; set `__BLUR_SEGMENTS__` to your real fast windows. One
    self-contained file; keep the GSAP CDN `<script>`.
-4. **Render it.** Call `render_video({ "html": <the full html string>, "fps": 30,
+4. **Self-check (REQUIRED — this is the planning step the Stripe test skipped).**
+   Preview the html with `web_screenshot` at **≥5 spread times** (≈10%, 30%, 50%,
+   70%, 90% of `duration_sec` — pass `?t=<sec>` or seek then shoot). For EACH shot:
+   - is there a clear focal element **filling ⅓–½ of the frame** (not tiny)?
+   - is the frame **non-empty** (no black/dead time)?
+   - is text **non-overlapping**, un-clipped, readable?
+   - real brand logo (not the ✷ spark), single accent, **Lucide** icons?
+   Also confirm `t≈0` and `t≈duration` are composed (not black). FIX every issue in
+   the html and re-preview until all shots pass — THEN render.
+5. **Render it.** Call `render_video({ "html": <the full html string>, "fps": 30,
    "mblur": 8 })`. It returns `{ drive_path, video_url, duration_sec, frames }`.
    The render takes a couple of minutes (it installs the browser on a cold worker).
    - If it errors (e.g. `__DURATION__ missing`, a JS error), FIX the html and call
-     `render_video` again. The html must actually initialise: `window.__DURATION__`
-     a positive number, `window.__seek(t)` re-renders the timeline at time `t`, and
-     `window.__BLUR_SEGMENTS__` an array — all set synchronously at load.
-   - Keep `duration_sec` ≈ the brief's `duration_sec` (default ~28) so render stays
-     quick.
-5. `set_output({ title, video: <drive_path>, drive_path, storyboard, notes })`.
+     `render_video` again. The html must initialise synchronously: positive
+     `window.__DURATION__`, working `window.__seek(t)`, array `window.__BLUR_SEGMENTS__`.
+   - Keep `duration_sec` ≈ the brief's `duration_sec` so render stays quick.
+6. `set_output({ title, video: <drive_path>, drive_path, storyboard, notes })`.
    Use the `drive_path` for the `video` field (it's the durable, playable handle);
    `video_url` may be empty inside the worker and that's fine.
 
