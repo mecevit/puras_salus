@@ -1,17 +1,14 @@
 title: Promo Motion Graphics
 description: >
-  Bir ürün/özellik brief'i alır; "Claude Design" görsel dilinde (sıcak fildişi +
-  terracotta + serif + spark, gerçek UI + cursor, spark+gerund loader, light→dark
-  reveal, plan checklist) saniye-saniye bir storyboard ve buna birebir uyan,
-  deterministik (GSAP timeline) tam bir HTML animasyon üretir. HTML; Playwright +
-  ffmpeg ile kare-kare video'ya çevrilecek şekilde `__DURATION__`, `__seek(t)` ve
-  hedefli motion blur için `__BLUR_SEGMENTS__` expose eder.
+  Bir ürün/özellik brief'i alır ve doğrudan bir VIDEO üretir. "Claude Design"
+  görsel dilinde (sıcak fildişi + terracotta + serif + spark, gerçek UI + cursor,
+  spark/gerund loader, light→dark reveal, plan checklist) saniye-saniye bir
+  storyboard ve deterministik bir GSAP HTML animasyonu kurgular; sonra bunu
+  worker içinde (Playwright + ffmpeg) kare-kare MP4'e render edip workspace
+  drive'a yazar. Çıktı: oynatılabilir bir video URL'i.
 
 entrypoint: SKILL.md
 text_model: claude/opus-4-8
-
-# Saf üretim görevi — DB/şüpheli işlem yok, modelin shell'e ihtiyacı yok.
-disable_bash: true
 
 input_schema:
   type: object
@@ -20,72 +17,77 @@ input_schema:
     brief:
       type: string
       description: >
-        Videonun ne anlatacağı: ürün, ana mesaj, gösterilecek akış/sahneler
-        (örn. "tek SKILL.md dosyasından çalışan bir skill'e"), öne çıkan UI anları.
+        Videonun ne anlatacağı: ürün, ana mesaj, gösterilecek akış/sahneler,
+        öne çıkan UI anları.
     product_name:
       type: string
-      description: Marka/ürün adı (wordmark + kapanışta kullanılır). Varsayılan "puras".
+      description: Marka/ürün adı (wordmark + kapanış). Varsayılan "puras".
     accent_color:
       type: string
-      description: Vurgu rengi (hex). Varsayılan terracotta "#C96442".
+      description: Tek vurgu rengi (hex). Varsayılan terracotta "#C96442".
     duration_sec:
       type: number
-      description: Hedef süre (sn). Varsayılan ~30.
-    aspect:
-      type: string
-      enum: ["16:9"]
-      description: En-boy oranı. Şimdilik 16:9 (1920×1080).
+      description: Hedef süre (sn). Varsayılan ~28.
 
 output_schema:
   type: object
-  required: [title, storyboard, html, blur_segments, render_command]
   properties:
     title:
       type: string
       description: Videonun kısa başlığı.
+    video:
+      type: video
+      description: Render edilmiş MP4'ün oynatılabilir (signed) URL'i.
+    drive_path:
+      type: string
+      description: Videonun workspace drive yolu (kalıcı pointer).
     storyboard:
       type: array
       description: Saniye-saniye beat listesi (act sırasına göre).
       items:
         type: object
-        required: [t_start, t_end, scene, on_screen, camera]
         properties:
-          t_start: { type: number, description: Beat başlangıcı (sn). }
-          t_end:   { type: number, description: Beat bitişi (sn). }
-          scene:   { type: string, description: Sahne/act adı (intro, prompt, loader, reveal, editor, end…). }
-          on_screen: { type: string, description: Ekranda ne var / ne oluyor. }
-          camera:  { type: string, description: Kamera hareketi (push-in, pull-out, pan, hold). }
-          motion:  { type: string, description: Easing + giriş/çıkış/morph notu (opsiyonel). }
-    html:
-      type: text
-      description: >
-        Tek dosyalık, kendi kendine yeten HTML. GSAP (vendor/gsap.min.js) ile tek
-        master timeline; `window.__DURATION__`, `window.__seek(t)` ve
-        `window.__BLUR_SEGMENTS__` expose eder. CSS animation/transition KULLANMAZ.
-    blur_segments:
-      type: array
-      description: Hedefli motion blur uygulanacak hızlı zaman pencereleri [start,end] (sn).
-      items:
-        type: array
-        items: { type: number }
-    render_command:
-      type: string
-      description: HTML'i video'ya çevirmek için önerilen komut (vrender.js + paralel).
+          t_start: { type: number }
+          t_end: { type: number }
+          scene: { type: string }
+          on_screen: { type: string }
+          camera: { type: string }
+          motion: { type: string }
     notes:
       type: string
-      description: Renk/metin/tempo için kısa uygulama notları (opsiyonel).
+      description: Renk/metin/tempo notları (opsiyonel).
+
+tools:
+  - name: render_video
+    description: >
+      Verilen tek-dosyalık HTML animasyonunu worker içinde MP4'e render eder ve
+      workspace drive'a yazar. HTML; `window.__DURATION__`, `window.__seek(t)` ve
+      (opsiyonel) `window.__BLUR_SEGMENTS__` expose ETMELİDİR; GSAP'ı
+      `vendor/gsap.min.js`'ten yükleyebilir (kopyası render anında konur). Hedefli
+      motion blur sadece __BLUR_SEGMENTS__ pencerelerinde uygulanır. Geri döner:
+      video_url (signed), drive_path, duration_sec, frames.
+    entrypoint: render_video.py:run
+    input_schema:
+      type: object
+      required: [html]
+      properties:
+        html:   { type: string,  description: Tek dosyalık, kendi kendine yeten animasyon HTML'i. }
+        fps:    { type: integer, description: Kare/sn (varsayılan 30). }
+        mblur:  { type: integer, description: Hızlı pencerelerde alt-örnek sayısı (varsayılan 8). }
+    output_schema:
+      type: object
+      properties:
+        video_url:    { type: string }
+        drive_path:   { type: string }
+        duration_sec: { type: number }
+        frames:       { type: integer }
+        fps:          { type: integer }
+        bytes:        { type: integer }
 
 examples:
   - title: "SKILL.md → çalışan skill"
     inputs:
       brief: >
-        Puras ürünü: tek bir SKILL.md dosyasından, tool'lar + eval + typed I/O içeren
+        Puras: tek bir SKILL.md dosyasından, tool'lar + eval + typed I/O içeren
         çalışan bir skill'e dönüşümü göster. Prompt yazımı, derleme, canlı pipeline.
       product_name: puras
-  - title: "Mobil meditasyon app prototipi"
-    inputs:
-      brief: >
-        Bir prompt'tan serene bir mobil meditasyon app prototipi üretilmesini göster;
-        tweaks paneli (tema/tipografi), dark mode toggle, sonra galeri.
-      product_name: puras
-      duration_sec: 28
