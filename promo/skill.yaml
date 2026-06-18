@@ -58,6 +58,22 @@ output_schema:
       description: Renk/metin/tempo notları (opsiyonel).
 
 tools:
+  - name: get_template
+    description: >
+      Cilalı referans animasyon HTML'ini (Claude-Design; tüm CSS + hareket
+      makinesi: kamera, morph, cursor, spark, gerund loader, dark reveal, plan
+      checklist, __BLUR_SEGMENTS__) döndürür. BURADAN BAŞLA: sıfırdan yazma,
+      bunu brief'e uyarla — makineyi koru, sadece sahne metni/etiket/palet
+      vurgusu/timing'i değiştir.
+    entrypoint: get_template.py:run
+    input_schema:
+      type: object
+      properties: {}
+    output_schema:
+      type: object
+      properties:
+        html: { type: text }
+
   - name: render_video
     description: >
       Verilen tek-dosyalık HTML animasyonunu worker içinde MP4'e render eder ve

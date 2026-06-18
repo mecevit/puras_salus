@@ -113,13 +113,25 @@ tl.to('#loadInner',{opacity:1,duration:.3},at+0.52);
 
 ## Steps
 
-1. Read `brief`, `product_name`, `accent_color`, `duration_sec`. Choose 5–6 acts
-   and their second ranges so the total ≈ `duration_sec`.
-2. Build the **storyboard** array (t_start, t_end, scene, on_screen, camera,
-   motion) — one row per beat, in order, honoring the motion principles.
-3. Write the complete **html** implementing exactly that storyboard, satisfying
-   the Deterministic HTML contract and house style. Compute `__BLUR_SEGMENTS__`
-   from the fast beats (morph, fast reveals, camera zooms).
+1. **Get the polished base.** Call `get_template()` → the reference HTML. This is
+   your starting point — **DO NOT write from scratch.** It already wires the
+   camera, morph, cursor, spark, gerund loader, dark reveal, plan checklist and
+   `__BLUR_SEGMENTS__` correctly, in the house style. (Hand-written from-scratch
+   HTML comes out visibly rougher — always adapt the template.)
+2. Read `brief`, `product_name`, `accent_color`, `duration_sec`. Map the brief
+   onto the template's acts (intro → prompt+morph → loader → dark reveal →
+   editor+plan → end) and build the **storyboard** array.
+3. **Adapt the template** into the final `html`. PRESERVE all CSS and the entire
+   motion machinery (camera / morph / cursor / spark / loader / easing and the
+   deterministic contract). Change ONLY:
+   - copy & labels — wordmark = `product_name`, the prompt text, the gerund words,
+     headlines, node labels, plan-checklist items, captions — so they tell the
+     brief's story;
+   - the single accent color (= `accent_color`) wherever the template uses terracotta;
+   - timings so the total ≈ `duration_sec`, and update `__BLUR_SEGMENTS__` to the
+     adapted fast windows.
+   Keep it one self-contained file, keep the GSAP CDN `<script>` (the renderer
+   inlines a local copy), and never break `__DURATION__` / `__seek` / `__BLUR_SEGMENTS__`.
 4. **Render it.** Call `render_video({ "html": <the full html string>, "fps": 30,
    "mblur": 8 })`. It returns `{ drive_path, video_url, duration_sec, frames }`.
    The render takes a couple of minutes (it installs the browser on a cold worker).
