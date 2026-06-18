@@ -52,7 +52,7 @@ def run(html: str, fps: int = 30, mblur: int = 8, max_seconds: float = 45.0) -> 
         raise ValueError("html must be a self-contained page exposing window.__seek / window.__DURATION__")
 
     fps = max(8, min(int(fps or 30), 60))
-    mblur = max(1, min(int(mblur or 8), 16))
+    mblur = max(1, min(int(mblur or 6), 16))
     ff = _ffmpeg()
     _ensure_chromium()
 
@@ -82,13 +82,18 @@ def run(html: str, fps: int = 30, mblur: int = 8, max_seconds: float = 45.0) -> 
             args=["--no-sandbox", "--disable-dev-shm-usage", "--force-color-profile=srgb", "--disable-lcd-text"],
         )
         pg = b.new_page(viewport={"width": W, "height": H}, device_scale_factor=1)
-        pg.goto((work / "index.html").as_uri() + "?render=1", wait_until="networkidle")
+        # 'load' (not 'networkidle') so a slow CDN (gsap/lucide) can't hang the nav
+        pg.goto((work / "index.html").as_uri() + "?render=1", wait_until="load", timeout=45000)
+        pg.wait_for_timeout(400)  # let GSAP + lucide.createIcons() initialise
 
         dur = pg.evaluate("() => window.__DURATION__")
         if not dur:
             b.close(); raise ValueError("window.__DURATION__ is missing/0 — the HTML did not initialise")
         dur = min(float(dur), float(max_seconds))
-        segs = pg.evaluate("() => window.__BLUR_SEGMENTS__ || []") or []
+        try:
+            segs = pg.evaluate("() => window.__BLUR_SEGMENTS__ || []") or []
+        except Exception:
+            segs = []
 
         def is_fast(t: float) -> bool:
             return any(float(a) <= t < float(bb) for a, bb in segs)
@@ -96,24 +101,39 @@ def run(html: str, fps: int = 30, mblur: int = 8, max_seconds: float = 45.0) -> 
         def grab(t: float, path: Path) -> None:
             pg.evaluate("(tt) => window.__seek(tt)", t)
             pg.evaluate("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
-            pg.screenshot(path=str(path), type="jpeg", quality=95, clip={"x": 0, "y": 0, "width": W, "height": H})
+            pg.screenshot(path=str(path), type="jpeg", quality=92, clip={"x": 0, "y": 0, "width": W, "height": H})
 
+        import time as _time
         n_frames = int(round(dur * fps))
+        # BUDGET the motion blur so a greedy __BLUR_SEGMENTS__ can never hang the render:
+        # cap the number of sub-sampled frames (even spread) AND a wall-clock budget.
+        fast_idx = [n for n in range(n_frames) if mblur > 1 and is_fast(n / fps)]
+        MAX_FAST, BUDGET_S = 140, 360.0
+        if len(fast_idx) > MAX_FAST:
+            stepf = len(fast_idx) / MAX_FAST
+            keep = {fast_idx[int(i * stepf)] for i in range(MAX_FAST)}
+        else:
+            keep = set(fast_idx)
+        t0 = _time.time()
+
         for n in range(n_frames):
             t = n / fps
             out = fdir / f"{n:05d}.jpg"
-            if mblur <= 1 or not is_fast(t):
+            blur_this = (n in keep) and (_time.time() - t0 < BUDGET_S)
+            if not blur_this:
                 grab(t, out)
-            else:  # average mblur sub-samples → real (directional) motion blur, only in fast windows
+            else:  # average mblur sub-samples → real directional motion blur, only here
                 ins = []
                 for k in range(mblur):
                     sf = sdir / f"s{k:02d}.jpg"
                     grab(t + (k / mblur) / fps, sf)
                     ins += ["-i", str(sf)]
-                subprocess.run(
+                r = subprocess.run(
                     [ff, "-y", *ins, "-filter_complex", f"mix=inputs={mblur}", "-frames:v", "1", str(out)],
-                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                 )
+                if r.returncode != 0 or not out.exists():
+                    grab(t, out)  # fall back to a single sample on any mix failure
         b.close()
 
     out_mp4 = work / "out.mp4"
