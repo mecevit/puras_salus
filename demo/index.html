@@ -210,11 +210,18 @@ function wc(el){ let x=el.offsetWidth/2,y=el.offsetHeight/2,n=el; while(n&&n.id!
 
 const tl = gsap.timeline({paused:true, defaults:{ease:"power3.inOut"}});
 
-/* camera (subtle push-ins only) */
-const world=$("#world"); const cam={x:960,y:540,s:1.0};
-const setCam=()=>{const s=cam.s;world.style.transform=`translate(${(960-s*cam.x).toFixed(2)}px,${(540-s*cam.y).toFixed(2)}px) scale(${s})`;};
+/* camera + per-move motion blur (cheap now: #world is 1080p, not the old big canvas) */
+const world=$("#world"); const cam={x:960,y:540,s:1.0}; const cb={b:0};
+const setCam=()=>{const s=cam.s;
+  world.style.transform=`translate(${(960-s*cam.x).toFixed(2)}px,${(540-s*cam.y).toFixed(2)}px) scale(${s})`;
+  world.style.filter = cb.b>0.05 ? `blur(${cb.b.toFixed(2)}px)` : 'none';};
 setCam();
 function camTo(at,dur,x,y,s,ease="sine.inOut"){ tl.to(cam,{x,y,s,duration:dur,ease,onUpdate:setCam},at); }
+// motion blur ramp synced to a camera move (0 → peak → 0)
+function camBlur(at,dur,peak){
+  tl.to(cb,{b:peak,duration:dur*0.45,ease:"power2.in",onUpdate:setCam},at);
+  tl.to(cb,{b:0,duration:dur*0.55,ease:"power2.out",onUpdate:setCam},at+dur*0.45);
+}
 
 function curTo(at,dur,el){ const c=wc($(el)); tl.to("#cursor",{left:c.x,top:c.y,duration:dur,ease:"power3.inOut"},at); return at+dur; }
 function curClick(at){ tl.to("#cursor",{scale:.82,duration:.08},at).to("#cursor",{scale:1,duration:.18},at+.08);
@@ -293,8 +300,8 @@ tl.to("#sceneEditor",{opacity:1,duration:.6},edAt);
 tl.to("#sceneEditor .appwin",{scale:1,y:0,duration:.8,ease:"power3.out"},edAt);
 // CLOSE-UP on the plan panel, panning down as items stack up
 const planA=wc($("#pr1")), planE=wc($("#pr5"));
-camTo(edAt+0.4,0.9, planA.x, planA.y+20, 1.5, "power3.inOut");
-camTo(edAt+1.3,1.9, planA.x, planE.y-10, 1.5);
+camTo(edAt+0.4,0.9, planA.x, planA.y+20, 1.5, "power3.inOut"); camBlur(edAt+0.4,0.9, 7);   // blur on zoom-IN
+camTo(edAt+1.3,1.9, planA.x, planE.y-10, 1.5);   // slow pan: NO blur (items must stay readable)
 const pr=["#pr1","#pr2","#pr3","#pr4","#pr5"];
 gsap.set(pr,{opacity:0,x:18});
 pr.forEach((p,i)=>{ const t=edAt+0.7+i*0.5;
@@ -302,7 +309,7 @@ pr.forEach((p,i)=>{ const t=edAt+0.7+i*0.5;
   tl.call(()=>{ $(p).classList.add("done"); $("#prog").textContent=(i+1)+"/5"; },null,t+0.28);
 });
 // SMOOTH ZOOM-OUT to reveal the whole window once the list is done
-camTo(edAt+3.5,1.4, 960,540, 0.94, "power3.inOut");
+camTo(edAt+3.5,1.4, 960,540, 0.94, "power3.inOut"); camBlur(edAt+3.5,1.4, 9);   // blur on zoom-OUT
 // cursor clicks Deploy (now in frame)
 gsap.set("#cursor",{left:1560,top:980});
 tl.to("#cursor",{opacity:1,duration:.3},edAt+4.7);

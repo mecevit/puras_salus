@@ -161,11 +161,28 @@ camTo(edAt+3.5,1.4, 960,540, 0.94,"power3.inOut");  // bitince SMOOTH ZOOM-OUT (
 ```
 
 ### Motion blur (engine-içi, görünür — feedback #4)
-Hızlı giriş/çıkışa blur bindir; rest'te 0:
+**Post-prod (ffmpeg frame-blend) YERİNE HTML'de yap** — deterministik, kontrollü,
+preview'de görünür, ucuz (`#world` 1080p olduğu sürece). İki yer:
+
+**(a) Obje hareketi** — hızlı giriş/çıkışa blur bindir; rest'te 0:
 ```js
 gsap.set(card,{opacity:0,y:92,scale:.8,filter:"blur(16px)"});
 tl.to(card,{opacity:1,y:0,scale:1,filter:"blur(0px)",duration:.6,ease:"back.out(1.4)"});
 ```
+**(b) Kamera hareketi (zoom-in / zoom-out)** — `#world`'e hıza bağlı blur ramp'i.
+`setCam` hem transform hem filter yazar; `camBlur(at,dur,peak)` 0→peak→0:
+```js
+const cb={b:0};
+// setCam içinde: world.style.filter = cb.b>0.05 ? `blur(${cb.b}px)` : 'none';
+function camBlur(at,dur,peak){
+  tl.to(cb,{b:peak,duration:dur*0.45,ease:"power2.in",onUpdate:setCam},at);
+  tl.to(cb,{b:0,duration:dur*0.55,ease:"power2.out",onUpdate:setCam},at+dur*0.45); }
+camTo(t,0.9,...,1.5); camBlur(t,0.9,7);     // zoom-IN blur
+camTo(t2,1.4,...,0.94); camBlur(t2,1.4,9);  // zoom-OUT blur
+```
+⚠️ Bir liste/metin **okunurken** (yavaş pan) blur KOYMA — sadece zoom in/out gibi
+hızlı kamera hareketlerinde. `cb` tween'leri zaman olarak üst üste binmemeli.
+Eski büyük kanvas (4900px) `#world` blur'unu kilitliyordu; 1080p `#world`'de sorun yok.
 
 ---
 
