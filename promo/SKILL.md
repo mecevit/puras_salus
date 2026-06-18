@@ -180,8 +180,9 @@ re-derive. The kit has NO scene flow — you compose the timeline.
    previews: the render is the deliverable and the job has a tight budget, so
    spending it on endless previews means NO video ships (that already happened once).
 5. **Render it.** Call `render_video({ "html": <the full html string>, "fps": 30,
-   "mblur": 8 })`. It returns `{ drive_path, video_url, duration_sec, frames }`.
-   The render takes a couple of minutes (it installs the browser on a cold worker).
+   "mblur": 5 })`. It returns `{ drive_path, video_url, duration_sec, frames }`.
+   The render takes a few minutes (it installs the browser on a cold worker; motion
+   blur is budgeted so it can't run away). Keep `duration_sec` ≤ ~30.
    - If it errors (e.g. `__DURATION__ missing`, a JS error), FIX the html and call
      `render_video` again. The html must initialise synchronously: positive
      `window.__DURATION__`, working `window.__seek(t)`, array `window.__BLUR_SEGMENTS__`.

@@ -51,8 +51,8 @@ def run(html: str, fps: int = 30, mblur: int = 8, max_seconds: float = 45.0) -> 
     if not html or "__seek" not in html:
         raise ValueError("html must be a self-contained page exposing window.__seek / window.__DURATION__")
 
-    fps = max(8, min(int(fps or 30), 60))
-    mblur = max(1, min(int(mblur or 6), 16))
+    fps = max(8, min(int(fps or 30), 30))
+    mblur = max(1, min(int(mblur or 5), 6))   # clamp: blur cost = MAX_FAST*mblur sub-frames
     ff = _ffmpeg()
     _ensure_chromium()
 
@@ -108,7 +108,7 @@ def run(html: str, fps: int = 30, mblur: int = 8, max_seconds: float = 45.0) -> 
         # BUDGET the motion blur so a greedy __BLUR_SEGMENTS__ can never hang the render:
         # cap the number of sub-sampled frames (even spread) AND a wall-clock budget.
         fast_idx = [n for n in range(n_frames) if mblur > 1 and is_fast(n / fps)]
-        MAX_FAST, BUDGET_S = 140, 360.0
+        MAX_FAST, BUDGET_S = 50, 200.0   # ≤50 blurred frames, ≤200s on blur — keeps total render ~5min
         if len(fast_idx) > MAX_FAST:
             stepf = len(fast_idx) / MAX_FAST
             keep = {fast_idx[int(i * stepf)] for i in range(MAX_FAST)}
