@@ -49,6 +49,14 @@ Johnston & Thomas, *The Illusion of Life* (1981). UI/motion'a uyarlaması:
 
 ## 2. Staging & görsel hiyerarşi (zamanda)
 
+- **Sahnede TEK aksiyon (staging'in özü).** Bir sahnede aynı anda tek bir şey olur
+  (biri yazar VEYA bir buton tıklanır VEYA bir panel kurulur). İzleyici aynı anda
+  2-3 şeyi takip edemez (bilişsel yük). İki şey ilişkiliyse **uzayda yan yana
+  değil, zamanda sırayla** göster (önce yaz, sonra sonucu göster). Kamera o tek
+  aksiyona zoom edip **takip eder**; bitince geri çekilip sonucu gösterir.
+- **Tek odak noktası.** Her an tek eleman en parlak/keskin/büyük/hareketli olsun;
+  gerisi soluk/blur/küçük. Odak özne karenin ~⅓–½'ini doldursun. Gözü kontrast,
+  ışık ve yönlendirici çizgilerle odak noktasına taşı.
 - **Tek seferde bir mesaj.** Sahneyi beat'lere böl; her beat'te göz tek bir yere gitsin.
 - **Giriş sırası anlam taşır.** Elemanları stagger ile sırayla getir (kartlar 60–120ms arayla). Hepsi birden gelmesin.
 - **Kontrastla yönlendir.** Aktif eleman parlak/büyük/keskin; gerisi soluk/blur/küçük.
@@ -165,7 +173,9 @@ Mekân hissi = katmanlar farklı hızda.
 - [ ] Kamera **amaçlı** hareket ediyor mu? Hiç ölü/sabit kare var mı?
 - [ ] Her **giren** ease-out, her **çıkan** ease-in mi?
 - [ ] Lineer hareket kalmış mı? (Sadece spinner lineer olmalı.)
-- [ ] Staging temiz mi — aynı anda 2+ rakip olay var mı?
+- [ ] **Her sahnede TEK aksiyon mu?** Aynı anda 2+ rakip hareket varsa böl.
+- [ ] Her an tek odak noktası var mı, kamera onu takip ediyor mu?
+- [ ] Marka logosu/wordmark'ı gerçek mi (yanlış/jenerik logo değil)?
 - [ ] Overlap/follow-through var mı, yoksa her şey aynı anda mı duruyor?
 - [ ] Metin oturduktan sonra ≥0.5 sn okunabiliyor mu?
 - [ ] Derinlik var mı (parallax / gölge / DOF / vignette)?
@@ -188,6 +198,10 @@ Mekân hissi = katmanlar farklı hızda.
 
 ## Kaynaklar
 
+- [Staging in Animation (single focal point, one action) — Animotions Studio](https://animotionsstudio.com/animation-staging/)
+- [Staging — Darvideo dictionary](https://darvideo.tv/dictionary/staging/)
+- [The Psychology of Camera Movement — Rocket House Pictures](https://rockethousepictures.com/blog/the-psychology-of-camera-movement-in-video-production.html)
+- [Motion Graphics for Attention (cognitive load) — Number Analytics](https://www.numberanalytics.com/blog/motion-graphics-for-attention)
 - [Disney's 12 Principles applied to UI Animation — Interaction Design Foundation](https://ixdf.org/literature/article/ui-animation-how-to-apply-disney-s-12-principles-of-animation-to-ui-design)
 - [12 Principles of Animation: A Guide to Motion Design — Uxcel](https://uxcel.com/blog/12-principles-of-animation-a-guide-to-motion-design-133)
 - [A Guide to Motion Design Principles — Toptal](https://www.toptal.com/designers/ux/motion-design-principles)
