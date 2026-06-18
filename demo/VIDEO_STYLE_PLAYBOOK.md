@@ -23,9 +23,10 @@ Kullanıcının iterasyonlarda söylediği her şey, somut kural olarak:
 3. **Bir liste/öğeler dizilirken kamera close-up + aşağı pan, bitince smooth
    zoom-out.** "Parse skill / generate… alt alta sıralanırken kamera oraya closeup
    yapabilir, liste bitince smooth zoom-out'la tüm pencereyi görebiliriz." Bkz. §4.
-4. **Motion blur GÖRÜNÜR olmalı.** ffmpeg frame-blend (×2) çok zayıf kaldı; iki kez
-   "motion blur yok" dendi. → **Engine-içi** blur: hareket eden objeye hareket
-   anında `filter:blur()` bindir (giriş/çıkış/kayma). Bkz. §5.
+4. **Motion blur GERÇEK (yönlü) olmalı.** Sırasıyla denenip reddedildi: frame-blend
+   ×2 (zayıf), CSS `filter:blur()` (izotropik = "düz blur, hareket yönüne değil").
+   → Doğrusu **temporal accumulation**: `MBLUR=8` ile alt-kareleri ortala; pan/obje
+   yönlü, **zoom radyal** smear olur. Final'de aç, preview'de kapalı. Bkz. §5.
 5. **Render HIZLI olmalı.** "Render süresi çok uzun, iterasyon hızımız yavaşlıyor."
    → Preview: **jpeg + yarı çözünürlük (dsf 0.5) + tek rAF**, ve `MAXT=N` ile kısa
    bakış. ~5dk → ~70-90sn. Bkz. §6.
@@ -160,29 +161,29 @@ camTo(edAt+1.3,1.9, a.x, e.y-10, 1.5);        // item'lar dizilirken AŞAĞI pan
 camTo(edAt+3.5,1.4, 960,540, 0.94,"power3.inOut");  // bitince SMOOTH ZOOM-OUT (tüm pencere)
 ```
 
-### Motion blur (engine-içi, görünür — feedback #4)
-**Post-prod (ffmpeg frame-blend) YERİNE HTML'de yap** — deterministik, kontrollü,
-preview'de görünür, ucuz (`#world` 1080p olduğu sürece). İki yer:
+### Motion blur — GERÇEK olanı temporal accumulation'dır (feedback #4 + #9)
 
-**(a) Obje hareketi** — hızlı giriş/çıkışa blur bindir; rest'te 0:
-```js
-gsap.set(card,{opacity:0,y:92,scale:.8,filter:"blur(16px)"});
-tl.to(card,{opacity:1,y:0,scale:1,filter:"blur(0px)",duration:.6,ease:"back.out(1.4)"});
+⚠️ **CSS `filter:blur()` GERÇEK motion blur DEĞİLDİR.** İzotropiktir (her yöne eşit)
+→ "odak kaybı" gibi durur, hareket yönünde smear yapmaz. Kullanıcı bunu net
+reddetti: *"düz blur, hareket yönüne doğru değil, gerçekçi durmuyor."*
+
+**Doğru yöntem: temporal accumulation (frame averaging).** Her çıktı karesini
+`MBLUR` alt-kareye böl, render et, ortala. Hareket alt-karelerde farklı konumda
+olduğu için ortalama **hareketin gerçek yönünde** smear üretir: pan/obje → yönlü,
+**zoom → radyal**. Fiziksel olarak doğru. `render.js` zaten yapıyor:
+```bash
+# ffmpeg: tmix=frames=MBLUR over FPS×MBLUR fps, sonra fps=FPS'e indir
+node render.js MBLUR=8           # gerçekçi smear (8 örnek). MBLUR=2 çok zayıf kalır.
 ```
-**(b) Kamera hareketi (zoom-in / zoom-out)** — `#world`'e hıza bağlı blur ramp'i.
-`setCam` hem transform hem filter yazar; `camBlur(at,dur,peak)` 0→peak→0:
-```js
-const cb={b:0};
-// setCam içinde: world.style.filter = cb.b>0.05 ? `blur(${cb.b}px)` : 'none';
-function camBlur(at,dur,peak){
-  tl.to(cb,{b:peak,duration:dur*0.45,ease:"power2.in",onUpdate:setCam},at);
-  tl.to(cb,{b:0,duration:dur*0.55,ease:"power2.out",onUpdate:setCam},at+dur*0.45); }
-camTo(t,0.9,...,1.5); camBlur(t,0.9,7);     // zoom-IN blur
-camTo(t2,1.4,...,0.94); camBlur(t2,1.4,9);  // zoom-OUT blur
-```
-⚠️ Bir liste/metin **okunurken** (yavaş pan) blur KOYMA — sadece zoom in/out gibi
-hızlı kamera hareketlerinde. `cb` tween'leri zaman olarak üst üste binmemeli.
-Eski büyük kanvas (4900px) `#world` blur'unu kilitliyordu; 1080p `#world`'de sorun yok.
+- **MBLUR=8–12** gerçekçi; **MBLUR=1** kapalı. Maliyet ×MBLUR (final-render kalitesi).
+- **Preview'ler MBLUR=1** (hız), **final MBLUR=8**. Sadece blur'u doğrulamak için
+  `FROMT/TOT` ile o bölümü yüksek MBLUR'la kısa render et:
+  ```bash
+  PREVIEW=1 MBLUR=8 FROMT=21.5 TOT=29 OUT=zoom.mp4 node render.js
+  ```
+- Animasyonda **sahte blur tween'i KOYMA** — hareketi temiz bırak, blur'u render
+  (temporal) versin. (CSS `blur()` sadece stilistik reveal/DOF için, motion için değil.)
+- Liste/metin **okunurken** kamera yavaş olsun ki o karelerde smear az olsun.
 
 ---
 
