@@ -36,7 +36,8 @@ if (existsSync(framesDir)) rmSync(framesDir, { recursive: true, force: true });
 mkdirSync(framesDir, { recursive: true });
 mkdirSync(path.join(__dirname, 'out'), { recursive: true });
 
-const url = 'file://' + path.join(__dirname, 'index.html') + '?render=1';
+const SRC = process.env.SRC || 'index.html';
+const url = 'file://' + path.join(__dirname, SRC) + '?render=1';
 
 const browser = await chromium.launch({ args: ['--force-color-profile=srgb', '--disable-lcd-text'] });
 const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: SS });
