@@ -2,3 +2,5 @@ node_modules/
 frames/
 out/*-preview.mp4
 ref/
+out/zoom-mblur.mp4
+out/zo_check.png

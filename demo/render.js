@@ -23,6 +23,8 @@ const CRF    = String(process.env.CRF || (PREVIEW ? 26 : 17));
 const PRESET = String(process.env.PRESET || (PREVIEW ? 'veryfast' : 'slow'));
 const OUT    = process.env.OUT || (PREVIEW ? 'salus-demo-preview.mp4' : 'salus-demo.mp4');
 const MAXT   = Number(process.env.MAXT || 0);                   // cap seconds (0 = full)
+const FROMT  = Number(process.env.FROMT || 0);                  // render only the window [FROMT, TOT]
+const TOT    = Number(process.env.TOT || 0);
 
 const RFPS = FPS * MBLUR;
 const W = 1920, H = 1080;
@@ -42,8 +44,11 @@ await page.goto(url, { waitUntil: 'networkidle' });
 
 let duration = await page.evaluate(() => window.__DURATION__);
 if (MAXT > 0) duration = Math.min(duration, MAXT);
-const totalFrames = Math.ceil(duration * RFPS);
-console.log(`${PREVIEW ? 'PREVIEW' : 'FULL'} · ${duration.toFixed(2)}s · ${FPS}fps · mblur×${MBLUR} · ${totalFrames} frames · cap ${Math.round(W*SS)}x${Math.round(H*SS)} ${FMT} · out ${OUT_W}x${OUT_H} → ${OUT}`);
+const startT = FROMT > 0 ? FROMT : 0;
+const endT = TOT > 0 ? Math.min(TOT, duration) : duration;
+const span = endT - startT;
+const totalFrames = Math.ceil(span * RFPS);
+console.log(`${PREVIEW ? 'PREVIEW' : 'FULL'} · t[${startT.toFixed(1)}–${endT.toFixed(1)}] ${span.toFixed(2)}s · ${FPS}fps · mblur×${MBLUR} · ${totalFrames} frames · cap ${Math.round(W*SS)}x${Math.round(H*SS)} ${FMT} → ${OUT}`);
 
 const shot = FMT === 'jpeg'
   ? { type: 'jpeg', quality: JQ, clip: { x: 0, y: 0, width: W, height: H } }
@@ -51,7 +56,7 @@ const shot = FMT === 'jpeg'
 
 const t0 = Date.now();
 for (let f = 0; f < totalFrames; f++) {
-  const t = f / RFPS;
+  const t = startT + f / RFPS;
   await page.evaluate((tt) => window.__seek(tt), t);
   // settle paint: double rAF for full (determinism), single for fast preview
   if (PREVIEW) await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
