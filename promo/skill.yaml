@@ -77,8 +77,9 @@ tools:
     output_schema:
       type: object
       properties:
-        video_url:    { type: string }
         drive_path:   { type: string }
+        video_url:    { type: string }
+        sign_error:   { type: string }
         duration_sec: { type: number }
         frames:       { type: integer }
         fps:          { type: integer }

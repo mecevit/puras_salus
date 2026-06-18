@@ -61,7 +61,10 @@ Finish with exactly one `set_output`. No prose outside `set_output`.
 
 The generated `html` must be a single self-contained file that:
 
-- Loads GSAP from `vendor/gsap.min.js` and builds **one** `gsap.timeline({paused:true})`.
+- Loads GSAP from the CDN
+  `https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js` (so your own
+  `web_screenshot` previews render; the renderer inlines a local copy anyway) and
+  builds **one** `gsap.timeline({paused:true})`.
 - Uses **NO** CSS animations/transitions and no `requestAnimationFrame` loops for
   state — every visual change is a tween/`set`/`call` on that timeline.
 - Drives time only through the timeline, and exposes:
@@ -118,14 +121,17 @@ tl.to('#loadInner',{opacity:1,duration:.3},at+0.52);
    the Deterministic HTML contract and house style. Compute `__BLUR_SEGMENTS__`
    from the fast beats (morph, fast reveals, camera zooms).
 4. **Render it.** Call `render_video({ "html": <the full html string>, "fps": 30,
-   "mblur": 8 })`. It returns `{ video_url, drive_path, duration_sec, frames }`.
+   "mblur": 8 })`. It returns `{ drive_path, video_url, duration_sec, frames }`.
+   The render takes a couple of minutes (it installs the browser on a cold worker).
    - If it errors (e.g. `__DURATION__ missing`, a JS error), FIX the html and call
      `render_video` again. The html must actually initialise: `window.__DURATION__`
      a positive number, `window.__seek(t)` re-renders the timeline at time `t`, and
      `window.__BLUR_SEGMENTS__` an array — all set synchronously at load.
    - Keep `duration_sec` ≈ the brief's `duration_sec` (default ~28) so render stays
      quick.
-5. `set_output({ title, video: <video_url>, drive_path, storyboard, notes })`.
+5. `set_output({ title, video: <drive_path>, drive_path, storyboard, notes })`.
+   Use the `drive_path` for the `video` field (it's the durable, playable handle);
+   `video_url` may be empty inside the worker and that's fine.
 
 ## Guardrails
 

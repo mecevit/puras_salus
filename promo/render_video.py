@@ -61,6 +61,17 @@ def run(html: str, fps: int = 30, mblur: int = 8, max_seconds: float = 45.0) -> 
     gsap = HERE / "vendor" / "gsap.min.js"
     if gsap.is_file():
         shutil.copy(gsap, work / "vendor" / "gsap.min.js")
+        # Inline GSAP so the page never depends on a vendor/CDN fetch: replace any
+        # <script src="...gsap...">, else inject into <head> if GSAP is referenced.
+        import re as _re
+        gsrc = gsap.read_text(encoding="utf-8")
+        html, n = _re.subn(
+            r'<script[^>]*src=["\'][^"\']*gsap[^"\']*["\'][^>]*>\s*</script>',
+            lambda m: "<script>" + gsrc + "</script>", html, flags=_re.I,
+        )
+        if n == 0 and "gsap" in html.lower() and "GreenSock" not in html:
+            inj = "<script>" + gsrc + "</script>"
+            html = html.replace("</head>", inj + "</head>", 1) if "</head>" in html else inj + html
     (work / "index.html").write_text(html, encoding="utf-8")
     fdir = work / "final"; fdir.mkdir()
     sdir = work / "sub"; sdir.mkdir()
@@ -119,18 +130,21 @@ def run(html: str, fps: int = 30, mblur: int = 8, max_seconds: float = 45.0) -> 
     dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(out_mp4, dest)
 
-    video_url = None
+    # The drive_path is the durable, worker-safe handle (mirrors puras.media).
+    # Signing is best-effort — it may be unavailable inside the worker; never fail on it.
+    video_url, sign_error = "", None
     try:
         from puras import drive
-        video_url = drive.url(rel, ttl=30 * 24 * 3600)
-    except Exception:
-        video_url = None
+        video_url = drive.url(rel, ttl=30 * 24 * 3600) or ""
+    except Exception as e:
+        sign_error = f"{type(e).__name__}: {str(e)[:200]}"
 
     size = os.path.getsize(out_mp4)
     shutil.rmtree(work, ignore_errors=True)
     return {
         "drive_path": rel,
         "video_url": video_url,
+        "sign_error": sign_error or "",
         "duration_sec": round(dur, 2),
         "frames": n_frames,
         "fps": fps,
