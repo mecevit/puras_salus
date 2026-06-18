@@ -320,6 +320,15 @@ tl.to("#endSpark",{scale:1,rotation:0,duration:.9,ease:"back.out(1.6)"},endAt);
 camTo(endAt,2.4,960,540,1.04);
 tl.to("#sceneEnd",{opacity:1,duration:1.2},endAt+1.2);   // hold
 
+// fast-motion windows → the renderer applies sub-frame motion blur ONLY here
+// (everything else stays single-sample = fast). Times in seconds.
+window.__BLUR_SEGMENTS__ = [
+  [morphAt+0.10, morphAt+0.85],   // input card morphs into the loader pill
+  [resAt+0.50,   resAt+2.55],     // result: nodes fly in
+  [edAt+0.30,    edAt+1.40],      // checklist camera zoom-IN
+  [edAt+3.40,    edAt+5.05],      // camera zoom-OUT to whole window
+];
+
 window.__DURATION__ = tl.duration() + 0.5;
 window.__seek = (t)=>{ tl.time(Math.min(t, tl.duration()), false); };
 if(!location.search.includes("render")){ tl.play(0); }
