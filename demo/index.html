@@ -223,11 +223,11 @@ const tl = gsap.timeline({paused:true, defaults:{ease:"power3.inOut"}});
 tl.to("#brand",{opacity:1,duration:.7}, 0.0);
 const shapes=[["#sh1",560,310],["#sh2",1320,330],["#sh3",1360,760],["#sh4",520,740],["#sh5",980,300]];
 shapes.forEach((s,i)=>{ const[sel,x,y]=s;
-  gsap.set(sel,{left:x, top:y, xPercent:-50, yPercent:-50, scale:.3, rotation:gsap.utils.random(-40,40,1)});
-  tl.to(sel,{opacity:1,scale:1,rotation:0,duration:.7,ease:"back.out(1.5)"}, 0.3+i*0.12);
+  gsap.set(sel,{left:x, top:y, xPercent:-50, yPercent:-50, scale:.3, rotation:gsap.utils.random(-40,40,1), filter:"blur(16px)"});
+  tl.to(sel,{opacity:1,scale:1,rotation:0,filter:"blur(0px)",duration:.7,ease:"back.out(1.5)"}, 0.3+i*0.12);  // motion blur on entry
   tl.to(sel,{y:`+=${gsap.utils.random(-22,22,1)}`,duration:1.1,ease:"sine.inOut"}, 1.4+i*0.06);
 });
-shapes.forEach((s,i)=>{ tl.to(s[0],{left:960,top:540,scale:.12,opacity:0,rotation:150,duration:.85,ease:"power3.in"}, 2.0+i*0.05); });
+shapes.forEach((s,i)=>{ tl.to(s[0],{left:960,top:540,scale:.12,opacity:0,rotation:150,filter:"blur(14px)",duration:.85,ease:"power3.in"}, 2.0+i*0.05); });  // motion blur on collapse
 
 /* ================= ACT 2 — Writing the Skill · close-up (3.0–7.2) ================= */
 tl.to("#editor",{opacity:1,duration:.5}, 3.0);
@@ -243,12 +243,12 @@ tl.to("#editor",{scale:.26, y:-150, filter:"blur(18px)", opacity:0, duration:.9,
 gsap.set("#pack",{scale:.9});
 tl.to("#pack",{opacity:1, scale:1, duration:.7, ease:"power3.out"}, pullA+0.15);
 // cards: anatomy assembles with overshoot; labels follow-through (settle a few frames later)
-const comp=[["#cardSearch"],["#cardFetch"],["#cardEval"],["#cardSchema"]];
-gsap.set(comp.map(c=>c[0]),{opacity:0,y:54,scale:.82});
+const comp=[["#cardSearch",-60],["#cardFetch",60],["#cardEval",-60],["#cardSchema",60]];
+comp.forEach(c=>gsap.set(c[0],{opacity:0,y:92,x:c[1],scale:.8,filter:"blur(16px)"}));  // fly from further → clearer motion blur
 const asm=8.2;
 comp.forEach((c,i)=>{
   const t0=asm+i*0.22;
-  tl.to(c[0],{opacity:1,y:0,scale:1,duration:.6,ease:"back.out(1.5)"}, t0);
+  tl.to(c[0],{opacity:1,y:0,x:0,scale:1,filter:"blur(0px)",duration:.62,ease:"back.out(1.4)"}, t0);  // motion blur on fly-in
   // follow-through: name + label settle slightly after the card body
   gsap.set(c[0]+" .cname",{y:10,opacity:0}); gsap.set(c[0]+" .clbl",{y:10,opacity:0});
   tl.to(c[0]+" .cname",{y:0,opacity:1,duration:.4,ease:"power2.out"}, t0+0.12);
@@ -310,19 +310,14 @@ const cam={x:960,y:540,s:1.05};
 const setCam=()=>{const s=cam.s;world.style.transform=`translate(${(960-s*cam.x).toFixed(2)}px,${(540-s*cam.y).toFixed(2)}px) scale(${s})`;};
 setCam();
 function camTo(at,dur,x,y,s,ease="sine.inOut"){ tl.to(cam,{x,y,s,duration:dur,ease,onUpdate:setCam},at); }
-// Act1: slow drift while shapes live (no overlapping cam tweens — they fight)
-camTo(0.0, 2.4, 1010, 515, 1.05);
-camTo(2.4, 1.0, 960, 540, 1.0, "power2.out");
-// Act3: settle then slow push-in on the skillpack
-camTo(pullA+0.15, 0.8, 960, 540, 1.0, "power2.out");
-camTo(8.2, 3.6, 960, 540, 1.07);
-camTo(11.9, 0.6, 960, 540, 1.0, "power2.inOut");
-// Act5: reset, then track each active card
-camTo(termHold+0.3, 0.45, 960, 540, 1.0, "power2.out");
-const runCenters = order.map(it=>wc($(it[0])));
-order.forEach((it,i)=>{ const c=runCenters[i]; camTo(runStart+i*stepDur, stepDur*0.9, c.x, c.y, 1.12); });
-camTo(runEnd, 1.0, 960, 560, 1.0, "power2.out");          // pull back wide
-camTo(runEnd+1.0, 2.0, 960, 545, 1.05);                   // final slow push
+// CALM CAMERA — only slow, centered, single-direction moves. No per-card tracking
+// (that caused the zig-zag/dizziness). The eye is guided by the glowing active card.
+camTo(0.0, 2.4, 985, 525, 1.05);                  // Act1: gentle drift
+camTo(2.4, 1.0, 960, 540, 1.0, "power2.out");     // settle (editor overlay covers 3.4–7.2)
+camTo(7.4, 4.6, 960, 536, 1.06);                  // Act3: one very slow push-in on the pack
+camTo(12.0, 0.6, 960, 540, 1.0, "power2.inOut");  // ease back before install (terminal overlay 12.6–17)
+camTo(17.0, 5.2, 960, 544, 1.05);                 // Act5: single slow push across the whole run — pack stays fully framed
+camTo(22.2, 3.0, 960, 544, 1.07);                 // Act6: gentle continue to settle
 
 window.__DURATION__ = tl.duration() + 0.4;
 window.__seek = (t)=>{ tl.time(Math.min(t, tl.duration()), false); };
