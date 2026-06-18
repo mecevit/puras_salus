@@ -28,8 +28,8 @@ Kullanıcının iterasyonlarda söylediği her şey, somut kural olarak:
    → Doğrusu **temporal accumulation**: `MBLUR=8` ile alt-kareleri ortala; pan/obje
    yönlü, **zoom radyal** smear olur. Final'de aç, preview'de kapalı. Bkz. §5.
 5. **Render HIZLI olmalı.** "Render süresi çok uzun, iterasyon hızımız yavaşlıyor."
-   → Preview: **jpeg + yarı çözünürlük (dsf 0.5) + tek rAF**, ve `MAXT=N` ile kısa
-   bakış. ~5dk → ~70-90sn. Bkz. §6.
+   → Preview: **720p (1280×720) jpeg + tek rAF**, `MAXT=N`/`FROMT/TOT` ile kısa
+   bakış. Teslim: **paralel (WN) + hedefli blur** (`vrender.js`). Bkz. §5.
 6. **Extreme close-up'lar.** Yazı yazılırken "input ekranı doldursun, cursor ekran
    boyu olsun, sadece yazı + cursor". Büyük native font ya da güçlü push-in.
 7. **Gerçek referansa birebir sadık kal.** Bir referans verilince (görsel/video)
@@ -191,23 +191,30 @@ node render.js MBLUR=8           # gerçekçi smear (8 örnek). MBLUR=2 çok zay
 
 ```bash
 cd demo
-# Hızlı iterasyon önizlemesi (~70-90s): 960x540 jpeg, dsf 0.5, tek rAF
+# Hızlı iterasyon önizlemesi → 720p (1280x720) jpeg, dsf 2/3, tek rAF
 PREVIEW=1 node render.js
 # Sadece bir zaman penceresini render et (çok hızlı doğrulama):
 PREVIEW=1 MAXT=6 node render.js              # ilk 6 sn
-MBLUR=8 FROMT=21.5 TOT=29 node render.js      # sadece 21.5–29 sn (yüksek blur testi)
-# Teslim (gerçekçi motion blur): temporal accumulation
-MBLUR=12 node render.js                        # tek çekirdek (yavaş)
-# ⚡ PARALEL render — N Chromium worker + tek encode (~N×, çekirdek kadar)
+PREVIEW=1 MBLUR=8 FROMT=21.5 TOT=29 node render.js   # sadece 21.5–29 sn (yüksek blur testi)
+
+# ⭐ TESLİM (önerilen): hedefli motion blur + paralel → 1080p, birkaç dk
+#   blur SADECE index.html'deki __BLUR_SEGMENTS__ pencerelerinde, gerisi net+hızlı
+MBLUR=10 SS=1 WN=4 bash -c 'rm -rf final subtmp && mkdir -p final out;
+  for i in 0 1 2 3; do CAPTURE=1 WI=$i node vrender.js >/tmp/vw$i.log 2>&1 & done; wait;
+  ENCODE=1 node vrender.js'
+
+# Alternatif teslim: uniform temporal blur (her şeye, daha yavaş)
 MBLUR=12 SS=1 FMT=jpeg JQ=97 WN=4 bash prender.sh
 ```
-**Darboğaz screenshot'tır** (disk/ffmpeg değil). En büyük hızlanma `prender.sh`
-ile **paralelleştirme**. Sonraki büyük kazanç: **hedefli motion blur** — MBLUR'u
-sadece hızlı segmentlerde (geçiş/zoom) yüksek tut, sakin yerlerde 1 (videonun çoğu
-yavaş; alt-kare sayısı ~5-10× düşer).
+**Önizlemeler 720p.** **Darboğaz screenshot'tır** (disk/ffmpeg değil). İki büyük
+hızlanma: (1) **paralelleştirme** (WN worker), (2) **hedefli motion blur**
+(`vrender.js`) — blur'u sadece `__BLUR_SEGMENTS__` pencerelerinde alt-kare
+ortalamasıyla yap, gerisi tek kare. Uniform MBLUR'e göre ~5× az alt-kare.
 
 Knob'lar: `FPS SS FMT JQ OUT_W OUT_H CRF PRESET MBLUR MAXT FROMT TOT OUT SRC` +
 paralel: `WN` (worker), `CAPTURE/WI` (worker modu), `ENCODE` (encode-only).
+Yeni hızlı an eklenince `index.html` içindeki `window.__BLUR_SEGMENTS__`'a o
+zaman aralığını [start,end] ekle ki blur orada da olsun.
 
 ---
 
