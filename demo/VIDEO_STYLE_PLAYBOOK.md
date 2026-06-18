@@ -193,13 +193,21 @@ node render.js MBLUR=8           # gerçekçi smear (8 örnek). MBLUR=2 çok zay
 cd demo
 # Hızlı iterasyon önizlemesi (~70-90s): 960x540 jpeg, dsf 0.5, tek rAF
 PREVIEW=1 node render.js
-# Sadece ilk N saniyeye bak (çok hızlı):
-PREVIEW=1 MAXT=6 node render.js
-# Teslim: 1080p, 2× supersampling, crf17 (birkaç dk)
-node render.js
-# İstenirse ekstra sinematik blur: MBLUR=2/3 (yavaşlatır)
+# Sadece bir zaman penceresini render et (çok hızlı doğrulama):
+PREVIEW=1 MAXT=6 node render.js              # ilk 6 sn
+MBLUR=8 FROMT=21.5 TOT=29 node render.js      # sadece 21.5–29 sn (yüksek blur testi)
+# Teslim (gerçekçi motion blur): temporal accumulation
+MBLUR=12 node render.js                        # tek çekirdek (yavaş)
+# ⚡ PARALEL render — N Chromium worker + tek encode (~N×, çekirdek kadar)
+MBLUR=12 SS=1 FMT=jpeg JQ=97 WN=4 bash prender.sh
 ```
-Knob'lar: `FPS SS FMT JQ OUT_W OUT_H CRF PRESET MBLUR MAXT OUT` (bkz. render.js).
+**Darboğaz screenshot'tır** (disk/ffmpeg değil). En büyük hızlanma `prender.sh`
+ile **paralelleştirme**. Sonraki büyük kazanç: **hedefli motion blur** — MBLUR'u
+sadece hızlı segmentlerde (geçiş/zoom) yüksek tut, sakin yerlerde 1 (videonun çoğu
+yavaş; alt-kare sayısı ~5-10× düşer).
+
+Knob'lar: `FPS SS FMT JQ OUT_W OUT_H CRF PRESET MBLUR MAXT FROMT TOT OUT SRC` +
+paralel: `WN` (worker), `CAPTURE/WI` (worker modu), `ENCODE` (encode-only).
 
 ---
 

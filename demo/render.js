@@ -25,6 +25,11 @@ const OUT    = process.env.OUT || (PREVIEW ? 'salus-demo-preview.mp4' : 'salus-d
 const MAXT   = Number(process.env.MAXT || 0);                   // cap seconds (0 = full)
 const FROMT  = Number(process.env.FROMT || 0);                  // render only the window [FROMT, TOT]
 const TOT    = Number(process.env.TOT || 0);
+// parallel rendering: CAPTURE=1 worker (no rm/no encode), ENCODE=1 encode-only; WN workers, WI index
+const CAPTURE = process.env.CAPTURE === '1';
+const ENCODE  = process.env.ENCODE === '1';
+const WN = Number(process.env.WN || 1);
+const WI = Number(process.env.WI || 0);
 
 const RFPS = FPS * MBLUR;
 const W = 1920, H = 1080;
@@ -32,41 +37,49 @@ const ext = FMT === 'jpeg' ? 'jpg' : 'png';
 const framesDir = path.join(__dirname, 'frames');
 const outFile = path.join(__dirname, 'out', OUT);
 
-if (existsSync(framesDir)) rmSync(framesDir, { recursive: true, force: true });
+// only the coordinator (plain mode) clears the frames dir; workers/encode share it
+if (!CAPTURE && !ENCODE && existsSync(framesDir)) rmSync(framesDir, { recursive: true, force: true });
 mkdirSync(framesDir, { recursive: true });
 mkdirSync(path.join(__dirname, 'out'), { recursive: true });
 
 const SRC = process.env.SRC || 'index.html';
 const url = 'file://' + path.join(__dirname, SRC) + '?render=1';
 
-const browser = await chromium.launch({ args: ['--force-color-profile=srgb', '--disable-lcd-text'] });
-const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: SS });
-await page.goto(url, { waitUntil: 'networkidle' });
+// ---- CAPTURE phase (skipped in encode-only mode) ----
+if (!ENCODE) {
+  const browser = await chromium.launch({ args: ['--force-color-profile=srgb', '--disable-lcd-text'] });
+  const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: SS });
+  await page.goto(url, { waitUntil: 'networkidle' });
 
-let duration = await page.evaluate(() => window.__DURATION__);
-if (MAXT > 0) duration = Math.min(duration, MAXT);
-const startT = FROMT > 0 ? FROMT : 0;
-const endT = TOT > 0 ? Math.min(TOT, duration) : duration;
-const span = endT - startT;
-const totalFrames = Math.ceil(span * RFPS);
-console.log(`${PREVIEW ? 'PREVIEW' : 'FULL'} · t[${startT.toFixed(1)}–${endT.toFixed(1)}] ${span.toFixed(2)}s · ${FPS}fps · mblur×${MBLUR} · ${totalFrames} frames · cap ${Math.round(W*SS)}x${Math.round(H*SS)} ${FMT} → ${OUT}`);
+  let duration = await page.evaluate(() => window.__DURATION__);
+  if (MAXT > 0) duration = Math.min(duration, MAXT);
+  const startT = FROMT > 0 ? FROMT : 0;
+  const endT = TOT > 0 ? Math.min(TOT, duration) : duration;
+  const span = endT - startT;
+  const totalFrames = Math.ceil(span * RFPS);
+  const tag = CAPTURE ? `worker ${WI}/${WN}` : (PREVIEW ? 'PREVIEW' : 'FULL');
+  console.log(`${tag} · t[${startT.toFixed(1)}–${endT.toFixed(1)}] ${span.toFixed(2)}s · mblur×${MBLUR} · ${totalFrames} frames · cap ${Math.round(W*SS)}x${Math.round(H*SS)} ${FMT}`);
 
-const shot = FMT === 'jpeg'
-  ? { type: 'jpeg', quality: JQ, clip: { x: 0, y: 0, width: W, height: H } }
-  : { type: 'png', clip: { x: 0, y: 0, width: W, height: H } };
+  const shot = FMT === 'jpeg'
+    ? { type: 'jpeg', quality: JQ, clip: { x: 0, y: 0, width: W, height: H } }
+    : { type: 'png', clip: { x: 0, y: 0, width: W, height: H } };
 
-const t0 = Date.now();
-for (let f = 0; f < totalFrames; f++) {
-  const t = startT + f / RFPS;
-  await page.evaluate((tt) => window.__seek(tt), t);
-  // settle paint: double rAF for full (determinism), single for fast preview
-  if (PREVIEW) await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
-  else await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-  await page.screenshot({ ...shot, path: path.join(framesDir, String(f).padStart(5, '0') + '.' + ext) });
-  if (f % 30 === 0) process.stdout.write(`\r  frame ${f}/${totalFrames} (${((Date.now()-t0)/1000).toFixed(0)}s)`);
+  const t0 = Date.now();
+  let done = 0;
+  for (let f = 0; f < totalFrames; f++) {
+    if (CAPTURE && (f % WN) !== WI) continue;            // this worker only owns its slice
+    const t = startT + f / RFPS;
+    await page.evaluate((tt) => window.__seek(tt), t);
+    if (PREVIEW) await page.evaluate(() => new Promise(r => requestAnimationFrame(r)));
+    else await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+    await page.screenshot({ ...shot, path: path.join(framesDir, String(f).padStart(5, '0') + '.' + ext) });
+    if (++done % 30 === 0) process.stdout.write(`\r  [${tag}] ${done} frames (${((Date.now()-t0)/1000).toFixed(0)}s)`);
+  }
+  process.stdout.write(`\r  [${tag}] ${done} frames (${((Date.now()-t0)/1000).toFixed(0)}s)\n`);
+  await browser.close();
 }
-process.stdout.write(`\r  frame ${totalFrames}/${totalFrames} (${((Date.now()-t0)/1000).toFixed(0)}s capture)\n`);
-await browser.close();
+
+if (CAPTURE) process.exit(0);   // workers stop here; coordinator encodes separately
 
 console.log('Encoding with ffmpeg…');
 const vf = [
