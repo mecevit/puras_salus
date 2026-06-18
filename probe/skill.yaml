@@ -1,0 +1,10 @@
+title: Runtime Probe
+description: Reports the deterministic worker runtime capabilities (binaries, deps, network egress) so we know if HTML→video rendering can run in-skill.
+entrypoint: main.py:run
+input_schema:
+  type: object
+  properties: {}
+output_schema:
+  type: object
+  properties:
+    report: { type: text }
