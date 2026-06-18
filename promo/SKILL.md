@@ -28,17 +28,27 @@ Finish with exactly one `set_output`. No prose outside `set_output`.
   **cursor** that arcs in and clicks (button depress + ripple); **light → dark
   reveal → light** rhythm; a Claude-Code-style **plan checklist** that ticks off.
 
-## Beat skeleton (adapt to the brief)
+## Composition — INVENT it (this is where the creativity lives)
 
-1. **Intro** — `✷ {product}` serif wordmark on ivory (spark back.out in).
-2. **Prompt** — clean input card; cursor types a brief-relevant prompt, clicks Send.
-3. **Morph → loader** — the input card **shrinks/morphs into** the loader pill
-   (spark spins + gerund cycles); background crossfades to night.
-4. **Reveal (dark)** — the product's core idea materializes with teal glow
-   (e.g. a node pipeline / app artifact), elements lighting up in sequence.
-5. **Editor / plan** — a light app window; right-side **plan checklist** ticks
-   off; cursor clicks a primary action (Deploy/Run).
-6. **End** — `✷ {product}` wordmark on ivory.
+There is **no fixed scene list**. Read the brief and design the storyboard that
+best tells THAT story: choose the scenes, their order, count, layout and reveal
+metaphor — and vary it run to run. Reach for (mix, replace, invent beyond this):
+
+- **layouts:** centered hero · split-screen · device/phone mockup · browser/app
+  window · full-bleed dark stage · before/after · a gallery/grid finale.
+- **"result" reveals:** a node/pipeline graph · a globe/map with glowing arcs · a
+  chart/dashboard animating in · a phone prototype · code typing into an editor ·
+  cards assembling into a layout.
+- **devices:** a cursor that types & clicks real UI · a terminal · a tweaks panel
+  with sliders · a plan checklist ticking · kinetic headline typography.
+
+The flow `intro → prompt+morph → loader → dark reveal → editor → end` is **ONE
+proven pattern** (it's what `get_template` returns). Use it when it fits, but feel
+free to drop/add/reorder beats and build a different shape for a different brief.
+
+What must NOT vary run-to-run = the **craft / quality bar**: the House style, the
+Motion principles, and the Deterministic contract below. **Keep those; invent
+everything else.**
 
 ## Motion principles (enforce)
 
@@ -113,25 +123,20 @@ tl.to('#loadInner',{opacity:1,duration:.3},at+0.52);
 
 ## Steps
 
-1. **Get the polished base.** Call `get_template()` → the reference HTML. This is
-   your starting point — **DO NOT write from scratch.** It already wires the
-   camera, morph, cursor, spark, gerund loader, dark reveal, plan checklist and
-   `__BLUR_SEGMENTS__` correctly, in the house style. (Hand-written from-scratch
-   HTML comes out visibly rougher — always adapt the template.)
-2. Read `brief`, `product_name`, `accent_color`, `duration_sec`. Map the brief
-   onto the template's acts (intro → prompt+morph → loader → dark reveal →
-   editor+plan → end) and build the **storyboard** array.
-3. **Adapt the template** into the final `html`. PRESERVE all CSS and the entire
-   motion machinery (camera / morph / cursor / spark / loader / easing and the
-   deterministic contract). Change ONLY:
-   - copy & labels — wordmark = `product_name`, the prompt text, the gerund words,
-     headlines, node labels, plan-checklist items, captions — so they tell the
-     brief's story;
-   - the single accent color (= `accent_color`) wherever the template uses terracotta;
-   - timings so the total ≈ `duration_sec`, and update `__BLUR_SEGMENTS__` to the
-     adapted fast windows.
-   Keep it one self-contained file, keep the GSAP CDN `<script>` (the renderer
-   inlines a local copy), and never break `__DURATION__` / `__seek` / `__BLUR_SEGMENTS__`.
+1. **Pull the kit + quality bar.** Call `get_template()` → the reference HTML.
+   Treat it as your **component library and the finish bar**, NOT a script to copy:
+   it shows exactly how the camera, morph, cursor, spark, gerund loader, reveals,
+   plan checklist, palette/type and `__BLUR_SEGMENTS__` are built to a high finish.
+   Lift its CSS tokens, components and helper JS; that is what guarantees quality.
+2. **Direct the piece.** From the brief, **INVENT the storyboard** (see
+   *Composition*): pick the scenes / order / layouts / reveal that fit THIS brief —
+   don't just refill the template's slots. Build the `storyboard` array.
+3. **Build the `html`.** Compose your storyboard by reusing the kit's CSS tokens,
+   components and helpers (`camTo` / cursor / `sparkSVG` / morph …). You may add,
+   reorder, replace or invent scenes freely. The ONLY hard rules: keep the House
+   style + Motion principles (the craft) and satisfy the Deterministic contract;
+   use `accent_color` as the single accent; set `__BLUR_SEGMENTS__` to your actual
+   fast windows. One self-contained file; keep the GSAP CDN `<script>`.
 4. **Render it.** Call `render_video({ "html": <the full html string>, "fps": 30,
    "mblur": 8 })`. It returns `{ drive_path, video_url, duration_sec, frames }`.
    The render takes a couple of minutes (it installs the browser on a cold worker).
